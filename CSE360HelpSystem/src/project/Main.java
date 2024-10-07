@@ -23,16 +23,18 @@ public class Main {
             char[] password = scanner.nextLine().toCharArray();
 
             // Create the first user with Admin role
-            User firstUser = new User(username, password, "First Admin", "admin@example.com");
-            firstUser.addRole(Role.ADMIN);
+            Admin adminUser = new Admin(username, password, "First Admin", "admin@example.com");
+            adminUser.addRole(Role.ADMIN);
 
             // Add the user to the list
-            userList.add(firstUser);
+            userList.add(adminUser);
 
             System.out.println("Admin account created. Please log in.");
 
             // Redirect back to login (for simplicity, just display info in this example)
-            login(firstUser);
+            login(adminUser);
+            
+            adminUser.listUserAccounts(userList);
         }
     }
 

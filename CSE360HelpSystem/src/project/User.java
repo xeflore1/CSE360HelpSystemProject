@@ -4,13 +4,13 @@ import java.util.Set;
 
 public class User {
     private String username;
-    private String password;
+    private char[] password;
     private String name;
     private String email;
     private Set<Role> roles; // Set of roles for the user
 
     // Constructor
-    public User(String username, String password, String name, String email) {
+    public User(String username, char[] password, String name, String email) {
         this.username = username;
         this.password = password;
         this.name = name;
@@ -54,12 +54,19 @@ public class User {
         this.username = username;
     }
 
-    public String getPassword() {
+    public char[] getPassword() {
         return password;
     }
 
-    public void setPassword(String password) {
+    public void setPassword(char[] password) {
         this.password = password;
+    }
+    
+    // Method to clear the password (for security)
+    public void clearPassword() {
+        for (int i = 0; i < password.length; i++) {
+            password[i] = '\0'; // Overwrite password with null characters
+        }
     }
 
     public String getName() {

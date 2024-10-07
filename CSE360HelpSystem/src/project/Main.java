@@ -1,33 +1,44 @@
 package project;
 
-import javafx.application.Application;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
-import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.layout.StackPane;
-import javafx.stage.Stage;
- 
-public class Main extends Application {
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+
+public class Main {
+    // List to store all users
+    private static List<User> userList = new ArrayList<>();
+
     public static void main(String[] args) {
-        launch(args);
+        Scanner scanner = new Scanner(System.in);
+
+        // First user, admin is logging in
+        if (userList.isEmpty()) {
+            System.out.println("No users found. You are the first user and will be made an Admin.");
+
+            // Prompt for username and password
+            System.out.print("Enter username: ");
+            String username = scanner.nextLine();
+
+            System.out.print("Enter password: ");
+            String password = scanner.nextLine();
+
+            // Create the first user with Admin role
+            User firstUser = new User(username, password, "First Admin", "admin@example.com");
+            firstUser.addRole(Role.ADMIN);
+
+            // Add the user to the list
+            userList.add(firstUser);
+
+            System.out.println("Admin account created. Please log in.");
+
+            // Redirect back to login (for simplicity, just display info in this example)
+            login(firstUser);
+        }
     }
-    
-    public void start(Stage primaryStage) {
-    	System.out.println("IT WORKED");
-    	System.out.println("It started!");
-        primaryStage.setTitle("ASU Hello World Spring 2024");
-        Button btn = new Button();
-        btn.setText("Display: 'ASU says: Hello World!'");
-        btn.setOnAction(new EventHandler<>() {
-            public void handle(ActionEvent event) {
-                System.out.println("ASU: Hello World!");
-            }
-        });
-        
-        StackPane root = new StackPane();
-        root.getChildren().add(btn); 
-        primaryStage.setScene(new Scene(root, 300, 250));
-        primaryStage.show();
+
+    // Simple login method (for now, just display the user info)
+    public static void login(User user) {
+        System.out.println("Welcome, " + user.getUsername() + "!");
+        user.displayUserInfo();
     }
 }

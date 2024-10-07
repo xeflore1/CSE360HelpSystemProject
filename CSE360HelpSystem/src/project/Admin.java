@@ -11,6 +11,12 @@ public class Admin extends User {
 
     // Method to invite a user
     public void inviteUser(String username, char[] password, String name, String email, List<User> userList) {
+    	for (User user : userList) {
+            if (user.getUsername().equals(username)) {
+                System.out.println("User " + username + " already exists.");
+                return;
+            }
+        }
         User newUser = new User(username, password, name, email);
         userList.add(newUser);
         System.out.println("User " + username + " has been invited.");

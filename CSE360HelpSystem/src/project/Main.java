@@ -1,16 +1,18 @@
 package project;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 
 public class Main {
     // List to store all users
     private static List<User> userList = new ArrayList<>();
+    private static Scanner scanner = new Scanner(System.in);
 
     public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-
+    	
+    	Admin adminUser = null;
         // First user, admin is logging in
         if (userList.isEmpty()) {
             System.out.println("You are the first user and will be made an Admin.");
@@ -18,26 +20,75 @@ public class Main {
             // Prompt for username and password
             System.out.print("Enter username: ");
             String username = scanner.nextLine();
+           
+            // Variable to contain password
+            char[] password;
 
-            System.out.print("Enter password: ");
-            char[] password = scanner.nextLine().toCharArray();
-
+            do {
+            	// enter password
+	            System.out.print("Enter password: ");
+	            password = scanner.nextLine().toCharArray();
+	            // Re enter the password
+	            System.out.print("Re enter the password: ");
+	            char[] secondPassword = scanner.nextLine().toCharArray();
+	            
+	            // Compare the two passwords using Arrays.equals()
+	            if (Arrays.equals(password, secondPassword)) {
+	                System.out.println("Passwords match.");
+	                break;
+	            } else {
+	                System.out.println("Passwords do not match.");
+	            }
+            } while(true);
+            
+            
             // Create the first user with Admin role
-            Admin adminUser = new Admin(username, password, "First Admin", "admin@example.com");
+            adminUser = new Admin(username, password, "First Admin", "admin@example.com");
             adminUser.addRole(Role.ADMIN);
 
             // Add the user to the list
             userList.add(adminUser);
 
             System.out.println("Admin account created. Please log in.");
-
             // Redirect back to login (for simplicity, just display info in this example)
             login(adminUser);
+            // FIXME admin needs to finish setting up account
             
-            adminUser.listUserAccounts(userList);
         }
+        // User attempting to login in is not the first
+        firstLogin();
+        adminUser.listUserAccounts(userList);
+        
     }
 
+    public static void firstLogin() {
+    	// first login
+        System.out.println("Hello, welcome to the login page!");
+        System.out.print("Enter username: ");
+        String username = scanner.nextLine();
+        System.out.print("Enter password: ");
+        char[] password = scanner.nextLine().toCharArray();
+        System.out.println("Enter Invintation code: ");
+        String inviteCode = scanner.nextLine();
+        if(inviteCode.equals("giveStudent")) {
+        	User newUser = new User(username, password, "tempName", "student@example.com");
+            newUser.addRole(Role.STUDENT);
+            userList.add(newUser);
+        }
+        else if(inviteCode.equals("giveInstructor")) {
+        	User newUser = new User(username, password, "tempName", "Instructor@example.com");
+        	newUser.addRole(Role.INSTRUCTOR);
+        }
+        else if(inviteCode.equals("giveAdmin")) {
+        	User newUser = new User(username, password, "tempName", "Admin@example.com");
+        	newUser.addRole(Role.ADMIN);
+        }
+        else {
+        	System.out.println("invalid code unable to create account");
+        }
+        
+    }
+    
     // Simple login method (for now, just display the user info)
     public static void login(User user) {
         System.out.println("Welcome, " + user.getUsername() + "!");

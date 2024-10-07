@@ -4,53 +4,47 @@ import java.util.List;
 
 public class Admin extends User {
 
-    // Constructor
-    public Admin(String username, String password, String name, String email) {
+    public Admin(String username, char[] password, String name, String email) {
         super(username, password, name, email);
+        addRole(Role.ADMIN); // Ensure this user has the Admin role
     }
 
-    // Method to invite others to join the app
-    public void inviteUser(String email) {
-        // Implementation to send an invitation to the email
-        System.out.println("Invitation sent to: " + email);
+    // Method to invite a user
+    public void inviteUser(String username, char[] password, String name, String email, List<User> userList) {
+        User newUser = new User(username, password, name, email);
+        userList.add(newUser);
+        System.out.println("User " + username + " has been invited.");
     }
 
-    // Method to reset a user's account (could reset password or other details)
-    public void resetUserAccount(User user) {
-        // Implementation to reset user details
-        System.out.println("User account reset for: " + user.getUsername());
+    // Method to reset a user account
+    public void resetUserAccount(User user, char[] newPassword) {
+        user.setPassword(newPassword);
+        System.out.println("User account " + user.getUsername() + " has been reset.");
     }
 
     // Method to delete a user account
     public void deleteUserAccount(User user, List<User> userList) {
-        // Implementation to remove user from the system
         userList.remove(user);
-        System.out.println("User account deleted for: " + user.getUsername());
+        System.out.println("User account " + user.getUsername() + " has been deleted.");
     }
 
     // Method to list all user accounts
-    public void listAllUsers(List<User> userList) {
+    public void listUserAccounts(List<User> userList) {
         System.out.println("Listing all users:");
         for (User user : userList) {
-            System.out.println(user);
+            System.out.println("Username: " + user.getUsername());
         }
     }
 
     // Method to add a role to a user
-    public void addRoleToUser(User user, String role) {
-        // Implementation to assign a role to a user
-        System.out.println("Added role '" + role + "' to user: " + user.getUsername());
+    public void addRoleToUser(User user, Role role) {
+        user.addRole(role);
+        System.out.println("Role " + role + " has been added to user " + user.getUsername());
     }
 
     // Method to remove a role from a user
-    public void removeRoleFromUser(User user, String role) {
-        // Implementation to remove a role from a user
-        System.out.println("Removed role '" + role + "' from user: " + user.getUsername());
-    }
-
-    // Method to log out
-    public void logout() {
-        // Implementation to log out the admin
-        System.out.println("Admin " + getUsername() + " logged out.");
+    public void removeRoleFromUser(User user, Role role) {
+        user.removeRole(role);
+        System.out.println("Role " + role + " has been removed from user " + user.getUsername());
     }
 }

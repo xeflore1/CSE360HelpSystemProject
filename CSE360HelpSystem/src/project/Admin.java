@@ -4,6 +4,7 @@ import java.util.List;
 
 public class Admin extends User {
 
+	// FIXME constructor needs to be updated to new user constructors
     public Admin(String username, char[] password, String name, String email) {
         super(username, password, name, email);
         addRole(Role.ADMIN); // Ensure this user has the Admin role

@@ -5,6 +5,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 
+import project.User.Name;
+
 public class Main {
     // List to store all users
     private static List<User> userList = new ArrayList<>();
@@ -33,13 +35,17 @@ public class Main {
 
             System.out.println("Admin account created. Please log in.");
             // Redirect back to login (for simplicity, just display info in this example)
-            login(adminUser);
-            // FIXME admin needs to finish setting up account
+            //login(adminUser);
+            // Admin needs to finalize details
+            finalLogin(adminUser);
+            System.out.println("after login print");
+            adminUser.displayUserInfo();
             
         }
         // User attempting to login in is not the first
         firstLogin();
         adminUser.listUserAccounts(userList);
+        
         
     }
 
@@ -75,8 +81,25 @@ public class Main {
     
    
     // Finish setting up account
-    public static void secondLogin(User newUser) {
-    	
+    public static void finalLogin(User newUser) {
+    	// Acquire name and email from user
+    	System.out.println("Finalize userdetails");
+    	System.out.println("Enter email: ");
+        String email = scanner.nextLine();
+        System.out.println("Enter first name: ");
+        String firstName = scanner.nextLine();
+        System.out.println("Enter perfered first name: ");
+        String perferedFirstName = scanner.nextLine();
+        System.out.println("Enter middle name: ");
+        String middleName = scanner.nextLine();
+        System.out.println("Enter last name: ");
+        String lastName = scanner.nextLine();
+        // Create full name for the new user
+        Name fullname = new Name(firstName, middleName, lastName, perferedFirstName);
+        newUser.setFullName(fullname);
+        newUser.setEmail(email);
+        System.out.println("login print:");
+        newUser.displayUserInfo();
     	
     }
     

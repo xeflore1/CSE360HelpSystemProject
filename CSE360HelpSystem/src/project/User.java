@@ -52,6 +52,15 @@ public class User {
         this.username = username;
         this.password = password;
         this.roles = new HashSet<>();
+        this.isOneTimePassword = false;  // Default to false, can be changed later
+        this.otpExpiry = null;  // Default, can be set later when OTP is active
+        this.roles = new HashSet<>();
+        this.topicProficiencies = new HashSet<>();
+
+        // Initialize default proficiencies (Intermediate level for all topics)
+        for (Topic topic : Topic.values()) {
+            this.topicProficiencies.add(new TopicProficiency(topic, Proficiency.INTERMEDIATE));
+        }
     }
     
     // full Constructor
@@ -93,7 +102,7 @@ public class User {
     // Method to display user info
     public void displayUserInfo() {
         System.out.println("Username: " + username);
-        //System.out.println("Name: " + fullName.getFullName());
+        System.out.println("Name: " + fullName.getFirstName() + " " + fullName.getMiddleName() + " " + fullName.getLastName());
         System.out.println("Email: " + email);
         System.out.println("Roles: " + roles);
         System.out.println("One-Time Password: " + (isOneTimePassword ? "Yes" : "No"));
@@ -163,6 +172,11 @@ public class User {
     public Set<Role> getRoles() {
         return roles;
     }
+    
+    public void setFullName(Name fullName) {
+        this.fullName = fullName;
+    }
+
 
     // Nested class for full name
     public static class Name {

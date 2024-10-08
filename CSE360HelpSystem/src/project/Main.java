@@ -39,14 +39,14 @@ public class Main {
             // Admin needs to finalize details
             finalLogin(adminUser);  
         }
-        
+        boolean check = true;
         // switch statement
-        while(true) {
+        while(check) {
         	// Welcome Screen
             // Ask for what user would like to do 
             System.out.println("Welcome to the 360 Welcome Page!");
             System.out.println("What would you like to do? Options:");
-            System.out.println("(Login, Print users)");
+            System.out.println("(Login, Print users, Delete user, Quit)");
             String option = scanner.nextLine();
             int choice = 0;
             if(option.equals("Login")) {
@@ -54,6 +54,9 @@ public class Main {
             }
             else if(option.equals("Print users")) {
             	choice = 2;
+            }
+            else if(option.equals("Delete user")) {
+            	choice = 3; 
             }
             // switch statement
 	        switch (choice) {
@@ -65,6 +68,12 @@ public class Main {
 		    	adminUser.listUserAccounts(userList);
 		    	System.out.println();
 		    	break;
+		    case 3: 
+		    	adminUser.deleteUserAccount("newUser", userList);
+		    	break;
+		    case 4:
+		    	System.out.println("Goodbye!");
+		    	check = false;
 		    default:
 		        System.out.println("Invalid choice");
 		        break;

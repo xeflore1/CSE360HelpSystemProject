@@ -6,3 +6,4 @@ public enum Role {
     INSTRUCTOR,
     STUDENT;
 }
+								

@@ -7,13 +7,25 @@ import java.util.Scanner;
 
 import project.User.Name;
 
-public class Main {
+import javafx.application.Application;
+import javafx.scene.Scene;
+import javafx.scene.layout.Pane;
+import javafx.stage.Stage;
+import javafx.event.Event;
+import javafx.scene.control.Button;
+import javafx.scene.text.Text;
+import javafx.scene.control.TextField;
+import javafx.scene.control.Label;
+import javafx.scene.control.PasswordField;
+
+public class Main extends Application{
     // List to store all users
     private static List<User> userList = new ArrayList<>();
     private static Scanner scanner = new Scanner(System.in);
 
     public static void main(String[] args) {
-    	
+	launch(args);
+	    
     	Admin adminUser = null;
         // First user, admin is logging in
         if (userList.isEmpty()) {
@@ -244,5 +256,63 @@ public class Main {
                 System.out.println("Passwords do not match.");
             }
         } while(true);
+	}
+
+	public void start(Stage theStage) 
+	{
+		theStage.setTitle("ASU Help System");
+		Pane firstLogin = new Pane();
+		
+		Text welcome = new Text();
+		welcome.setText("Welcome");
+		
+		Text userOne = new Text();
+		userOne.setText("You are the first user and will be made an Admin.");
+		
+		Button createUser = new Button();
+		createUser.setText("Create User");
+		
+		Label usernameLabel = new Label("Enter Username: ");
+		TextField usernameInput = new TextField();
+		
+		Label passwordLabel = new Label("Enter Password: ");
+		PasswordField passwordInput = new PasswordField();
+		
+		Label passwordCheckLabel = new Label("Confirm Password: ");
+		PasswordField passwordCheck = new PasswordField();
+		
+		firstLogin.getChildren().addAll(welcome, userOne, createUser, usernameLabel, usernameInput,
+				passwordLabel, passwordInput, passwordCheckLabel, passwordCheck);
+		welcome.setLayoutX(225);
+		welcome.setLayoutY(100);
+		
+		userOne.setLayoutX(120);
+		userOne.setLayoutY(125);
+		
+		createUser.setLayoutX(214);
+		createUser.setLayoutY(325);
+		
+		usernameLabel.setLayoutX(207);
+		usernameLabel.setLayoutY(150);
+		
+		usernameInput.setLayoutX(180);
+		usernameInput.setLayoutY(170);
+		
+		passwordLabel.setLayoutX(210);
+		passwordLabel.setLayoutY(205);
+		
+		passwordInput.setLayoutX(180);
+		passwordInput.setLayoutY(225);
+		
+		passwordCheckLabel.setLayoutX(200);
+		passwordCheckLabel.setLayoutY(260);
+		
+		passwordCheck.setLayoutX(180);
+		passwordCheck.setLayoutY(280);
+		
+		Scene firstLoginView = new Scene(firstLogin, 500, 500);
+		theStage.setScene(firstLoginView);
+		theStage.show();
+		
 	}
 }

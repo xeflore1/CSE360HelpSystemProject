@@ -62,23 +62,6 @@ public class User {
             this.topicProficiencies.add(new TopicProficiency(topic, Proficiency.INTERMEDIATE));
         }
     }
-    
-    // full Constructor
-    public User(String username, char[] password, String email, Name fullName) {
-        this.username = username;
-        this.password = password;
-        this.email = email;
-        this.fullName = fullName;
-        this.isOneTimePassword = false;  // Default to false, can be changed later
-        this.otpExpiry = null;  // Default, can be set later when OTP is active
-        this.roles = new HashSet<>();
-        this.topicProficiencies = new HashSet<>();
-
-        // Initialize default proficiencies (Intermediate level for all topics)
-        for (Topic topic : Topic.values()) {
-            this.topicProficiencies.add(new TopicProficiency(topic, Proficiency.INTERMEDIATE));
-        }
-    }
 
     // Method to add a role
     public void addRole(Role role) {

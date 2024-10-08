@@ -9,11 +9,6 @@ public class Admin extends User {
         super(username, password);
         addRole(Role.ADMIN); // Ensure this user has the Admin role
     }
-	// FIXME constructor needs to be updated to new user constructors
-    public Admin(String username, char[] password, String firstName, String middleName, String lastName, String preferredName, String email) {
-        super(username, password, email, new Name(firstName, middleName, lastName, preferredName));
-        addRole(Role.ADMIN); // Ensure this user has the Admin role
-    }
 
     // Method to invite a user
     public void inviteUser(String username, char[] password, String name, String email, List<User> userList) {

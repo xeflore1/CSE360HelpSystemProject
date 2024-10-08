@@ -40,6 +40,9 @@ public class Admin extends User {
         System.out.println("Listing all users:");
         for (User user : userList) {
             System.out.println("Username: " + user.getUsername());
+            System.out.println("First name: " + user.getFullName().getFirstName());
+            System.out.println("Last name: " + user.getFullName().getLastName());
+            System.out.println("Email: " + user.getEmail());
         }
     }
 

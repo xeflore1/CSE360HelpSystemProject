@@ -82,6 +82,11 @@ public class User {
         return roles.contains(role);
     }
 
+    // FIXME untested,  Check if user has multiple roles
+    public boolean hasMultipleRoles() {
+        return roles.size() > 1;
+    }
+
     // Method to display user info
     public void displayUserInfo() {
         System.out.println("Username: " + username);

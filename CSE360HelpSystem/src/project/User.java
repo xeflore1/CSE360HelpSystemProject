@@ -21,7 +21,7 @@ public class User {
 
     // Enum for topics
     public enum Topic {
-        JAVA, PYTHON, DATA_STRUCTURES, ALGORITHMS, WEB_DEVELOPMENT  // Add more topics as needed
+        JAVA, JAVAFX, SOFTENG, STUDY, PROJECT  // Add more topics as needed
     }
 
     // Nested class to represent topic proficiency
@@ -51,6 +51,7 @@ public class User {
     public User(String username, char[] password) {
         this.username = username;
         this.password = password;
+        this.roles = new HashSet<>();
     }
     
     // full Constructor
@@ -92,7 +93,7 @@ public class User {
     // Method to display user info
     public void displayUserInfo() {
         System.out.println("Username: " + username);
-        System.out.println("Name: " + fullName.getFullName());
+        //System.out.println("Name: " + fullName.getFullName());
         System.out.println("Email: " + email);
         System.out.println("Roles: " + roles);
         System.out.println("One-Time Password: " + (isOneTimePassword ? "Yes" : "No"));
@@ -101,10 +102,10 @@ public class User {
         }
 
         // Display topic proficiencies
-        System.out.println("Proficiencies:");
+        /*System.out.println("Proficiencies:");
         for (TopicProficiency proficiency : topicProficiencies) {
             System.out.println(proficiency.getTopic() + ": " + proficiency.getProficiency());
-        }
+        } */
     }
 
     // Method to clear the password (for security)

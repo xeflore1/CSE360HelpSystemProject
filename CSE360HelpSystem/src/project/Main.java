@@ -25,7 +25,7 @@ public class Main {
             char[] password = passwordDoubleChecker();
             
             // Create the first user with Admin role
-            adminUser = new Admin(username, password, "First Admin", "admin@example.com");
+            adminUser = new Admin(username, password);
             adminUser.addRole(Role.ADMIN);
 
             // Add the user to the list

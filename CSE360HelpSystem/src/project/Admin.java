@@ -4,9 +4,14 @@ import java.util.List;
 
 public class Admin extends User {
 
+	// initial constructor
+    public Admin(String username, char[] password) {
+        super(username, password);
+        addRole(Role.ADMIN); // Ensure this user has the Admin role
+    }
 	// FIXME constructor needs to be updated to new user constructors
-    public Admin(String username, char[] password, String name, String email) {
-        super(username, password, name, email);
+    public Admin(String username, char[] password, String firstName, String middleName, String lastName, String preferredName, String email) {
+        super(username, password, email, new Name(firstName, middleName, lastName, preferredName));
         addRole(Role.ADMIN); // Ensure this user has the Admin role
     }
 
@@ -18,8 +23,8 @@ public class Admin extends User {
                 return;
             }
         }
-        User newUser = new User(username, password, name, email);
-        userList.add(newUser);
+        //User newUser = new User(username, password, name, email);
+        //userList.add(newUser);
         System.out.println("User " + username + " has been invited.");
     }
 

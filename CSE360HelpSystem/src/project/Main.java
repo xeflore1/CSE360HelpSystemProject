@@ -309,6 +309,60 @@ public class Main extends Application{
 		
 		passwordCheck.setLayoutX(180);
 		passwordCheck.setLayoutY(280);
+
+		Scene firstLoginView = new Scene(firstLogin, 500, 500);
+		
+		Pane defaultLogin = new Pane();
+		
+		Button login = new Button("Login");
+		
+		Text loginPrompt = new Text("Please enter credentials to log in:");
+		
+		defaultLogin.getChildren().addAll(welcome, login, loginPrompt, usernameLabel, usernameInput,
+				passwordLabel, passwordInput, passwordCheckLabel, passwordCheck);
+		
+		login.setLayoutX(214);
+		login.setLayoutY(325);
+		
+		loginPrompt.setLayoutX(160);
+		loginPrompt.setLayoutY(125);
+		
+		Scene defaultLoginView = new Scene(defaultLogin, 500, 500);
+		
+		Pane inviteLogin = new Pane();
+		
+		Label inviteCodeLabel = new Label("Enter Invite Code: ");
+		
+		TextField inviteCode = new TextField();
+		
+		inviteLogin.getChildren().addAll(welcome, inviteCodeLabel, inviteCode, 
+				usernameLabel, usernameInput, passwordLabel, passwordInput, passwordCheckLabel,
+				passwordCheck, createUser);
+		
+		inviteCodeLabel.setLayoutX(120);
+		inviteCodeLabel.setLayoutY(118);
+		
+		inviteCode.setLayoutX(220);
+		inviteCode.setLayoutY(115);
+		
+		Scene inviteLoginView = new Scene(inviteLogin, 500, 500);
+		
+		Pane studentHome = new Pane();
+		
+		Button logout = new Button("Log Out");
+		
+		studentHome.getChildren().add(logout);
+		
+		logout.setLayoutX(225);
+		logout.setLayoutY(225);
+		
+		Scene studentHomeView = new Scene(studentHome, 500, 500);
+		
+		Pane instructorHome = new Pane();
+		
+		instructorHome.getChildren().add(logout);
+		
+		Scene instructorHomeView = new Scene(instructorHome, 500, 500);
 		
 		Scene firstLoginView = new Scene(firstLogin, 500, 500);
 		theStage.setScene(firstLoginView);

@@ -1,372 +1,631 @@
 package project;
 
+import javafx.application.Application;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
+import javafx.event.ActionEvent;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.text.Text;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Scanner;
+import java.util.Optional;
 
-import project.User.Name;
-
-import javafx.application.Application;
-import javafx.scene.Scene;
-import javafx.scene.layout.Pane;
-import javafx.stage.Stage;
-import javafx.event.Event;
-import javafx.scene.control.Button;
-import javafx.scene.text.Text;
-import javafx.scene.control.TextField;
-import javafx.scene.control.Label;
-import javafx.scene.control.PasswordField;
-
-public class Main extends Application{
-    // List to store all users
+public class Main extends Application {
     private static List<User> userList = new ArrayList<>();
-    private static Scanner scanner = new Scanner(System.in);
+    private Admin adminUser = null;
+    private User currentUser = null;
+    private TextArea outputArea = new TextArea();
+    private VBox optionBox = new VBox(10);  // Reusable optionBox to prevent multiple instances
 
     public static void main(String[] args) {
-	launch(args);
-	    
-    	Admin adminUser = null;
-        // First user, admin is logging in
-        if (userList.isEmpty()) {
-            System.out.println("You are the first user and will be made an Admin.");
-
-            // Prompt for username and password
-            System.out.print("Enter username: ");
-            String username = scanner.nextLine();
-           
-            // Variable to contain password
-            char[] password = passwordDoubleChecker();
-            
-            // Create the first user with Admin role
-            adminUser = new Admin(username, password);
-            adminUser.addRole(Role.ADMIN);
-            
-
-            // Add the user to the list
-            userList.add(adminUser);
-
-            System.out.println("Admin account created. Please log in.");
-            // Redirect back to login (for simplicity, just display info in this example)
-            // Admin needs to finalize details
-            finalLogin(adminUser);  
-        }
-        boolean check = true;
-        // switch statement
-        while(check) {
-        	// Welcome Screen
-            // Ask for what user would like to do 
-            System.out.println("Welcome to the 360 Welcome Page!");
-            System.out.println("What would you like to do? Options:");
-            System.out.println("(Login, Print users, Delete user, Quit)");
-            String option = scanner.nextLine();
-            int choice = 0;
-            if(option.equals("Login")) {
-            	choice = 1;
-            }
-            else if(option.equals("Print users")) {
-            	choice = 2;
-            }
-            else if(option.equals("Delete user")) {
-            	choice = 3; 
-            }
-            // switch statement
-	        switch (choice) {
-		    case 1:
-		        login();
-		        System.out.println();
-		        break;
-		    case 2:
-		    	adminUser.listUserAccounts(userList);
-		    	System.out.println();
-		    	break;
-		    case 3: 
-		    	adminUser.deleteUserAccount("newUser", userList);
-		    	break;
-		    case 4:
-		    	System.out.println("Goodbye!");
-		    	check = false;
-		    default:
-		        System.out.println("Invalid choice");
-		        break;
-	        }
-        }
-        
+        launch(args);
     }
-    // regular login
-    public static void login() {
-        System.out.println("Welcome to the 360 help system!" );
-        System.out.println("Do you already have an account? Yes or No");
-        String check = scanner.nextLine();
-        // Account already exists
-        if(check.equals("Yes")) {
-        	 // Ask for username and password
-        	 System.out.print("Enter username: ");
-             String username = scanner.nextLine();
-             char[] password = passwordDoubleChecker();
-             // search for user
-             for (User user : userList) {
-            	 // check if username matches
-            	 if(user.getUsername().equals(username)) {
-            		 // check if password matches
-            		 if(Arrays.equals(password, user.getPassword())) {
-            			 // Check if user has multiple roles
-            			 if(user.hasMultipleRoles()) {
-	            			 System.out.println("Select a role for this session (Student, Instructor, Admin): ");
-	                         String role = scanner.nextLine();
-	                         // user is a student
-	                         if (role.equals("Student") && user.hasRole(Role.STUDENT)) {
-	                        	 System.out.println("ADD CODE TO GO TO HOME PAGE STUDENT");
-	                         }
-	                         // user is a instructor
-	                         else if (role.equals("Instructor") && user.hasRole(Role.INSTRUCTOR)) {
-	                        	 System.out.println("ADD CODE TO GO TO HOME PAGE INSTRUCTOR");
-	                         }
-	                         // user is a admin
-	                         else if (role.equals("Admin") && user.hasRole(Role.ADMIN)) {
-	                        	 System.out.println("ADD CODE TO GO TO HOME PAGE ADMIN");
-	                         }
-	                         System.out.println("Your account does not have that role");
-            			 }
-            			 // user only has one role
-            			 else {
-            				 if (user.hasRole(Role.STUDENT)) {
-	                        	 System.out.println("ADD CODE TO GO TO HOME PAGE STUDENT");
-	                         }
-	                         // user is a instructor
-	                         else if (user.hasRole(Role.INSTRUCTOR)) {
-	                        	 System.out.println("ADD CODE TO GO TO HOME PAGE INSTRUCTOR");
-	                         }
-	                         // user is a admin
-	                         else if (user.hasRole(Role.ADMIN)) {
-	                        	 System.out.println("ADD CODE TO GO TO HOME PAGE ADMIN");
-	                         }
-            			 }
-            		 }
-            	 }
-             }
-             System.out.println("User not found");
-        	 
-        }
-        else {
-        	// Send user to account creation 
-        	initialLogin();
-        }
-    }
-    // initial login 
-    public static void initialLogin() {
-        System.out.println("\nHello, welcome to the registration page!");
-        System.out.println("Do you have an invintation key? Yes or No");
-        String check = scanner.nextLine();
-        // Invitation key route
-        if(check.equals("Yes")) {
-        	// Acquire username and password
-        	System.out.print("Enter username: ");
-	        String username = scanner.nextLine();
-	        char[] password = passwordDoubleChecker();
-	        // Change role based on invitation code
-        	System.out.println("Enter Invitation code: ");
-	        String inviteCode = scanner.nextLine();
-	        // Student invite code
-	        if(inviteCode.equals("giveStudent")) {
-	        	User newUser = new User(username, password);
-	            newUser.addRole(Role.STUDENT);
-	            userList.add(newUser);
-	            finalLogin(newUser);
-	        }
-	        // Instructor invite code
-	        else if(inviteCode.equals("giveInstructor")) {
-	        	User newUser = new User(username, password);
-	        	newUser.addRole(Role.INSTRUCTOR);
-	        	userList.add(newUser);
-	        	finalLogin(newUser);
-	        }
-	        // Admin invite code
-	        else if(inviteCode.equals("giveAdmin")) {
-	        	User newUser = new User(username, password);
-	        	newUser.addRole(Role.ADMIN);
-	        	userList.add(newUser);
-	        	finalLogin(newUser);
-	        }
-	        else {
-	        	System.out.println("invalid code unable to create account");
-	        }
-        }
-        // normal log in
-        else {
-	        System.out.print("Enter username: ");
-	        String username = scanner.nextLine();
-	        System.out.print("Enter password: ");
-	        char[] password = passwordDoubleChecker();
-	        User newUser = new User(username, password);
-	        // Since no invite code was provided new user is student by default 
-            newUser.addRole(Role.STUDENT);
-            userList.add(newUser);
-        	finalLogin(newUser);
-        }
+
+    @Override
+    public void start(Stage theStage) {
+        theStage.setTitle("ASU Help System");
+
+        Pane firstLogin = new Pane();
+        VBox formContainer = new VBox(5); // Main container for all components
+        formContainer.setAlignment(Pos.CENTER);
+        formContainer.setPadding(new Insets(10, 10, 20, 10)); // Add bottom padding for buffer
         
+        Text welcomeText = new Text("Welcome to the ASU Help System");
+        Button createUserButton = new Button("Create Admin");
+        formContainer.getChildren().addAll(welcomeText, createUserButton, outputArea);
+
+        outputArea.setPrefHeight(200);
+        outputArea.setEditable(false);
+        Scene mainScene = new Scene(formContainer, 500, 800);
+        theStage.setScene(mainScene);
+
+        // Create user fields and labels
+        Label usernameLabel = new Label("Enter Username:");
+        TextField usernameInput = new TextField();
+        Label passwordLabel = new Label("Enter Password:");
+        PasswordField passwordInput = new PasswordField();
+        Label confirmPasswordLabel = new Label("Confirm Password:");
+        PasswordField confirmPasswordInput = new PasswordField();
+        // Button creation
+        Button submitButton = new Button("Submit");
+        Button cancelButton = new Button("Cancel");
+
+        // Add all components to form container (initially hidden)
+        formContainer.getChildren().addAll(
+            usernameLabel, usernameInput, 
+            passwordLabel, passwordInput, 
+            confirmPasswordLabel, confirmPasswordInput,
+            submitButton, cancelButton
+        );
+        
+        // components are initially not visible
+        usernameLabel.setVisible(false);
+        usernameInput.setVisible(false);
+        passwordLabel.setVisible(false);
+        passwordInput.setVisible(false);
+        confirmPasswordLabel.setVisible(false);
+        confirmPasswordInput.setVisible(false);
+        submitButton.setVisible(false);
+        cancelButton.setVisible(false);
+
+        // Event handler to show admin creation form
+        createUserButton.setOnAction(event -> {
+            outputArea.appendText("You are the first user and will be made an Admin.\n");
+            usernameLabel.setVisible(true);
+            usernameInput.setVisible(true);
+            passwordLabel.setVisible(true);
+            passwordInput.setVisible(true);
+            confirmPasswordLabel.setVisible(true);
+            confirmPasswordInput.setVisible(true);
+            submitButton.setVisible(true);
+            cancelButton.setVisible(true);
+            createUserButton.setDisable(true);
+        });
+
+        // Submit button handler for admin creation
+        submitButton.setOnAction(event -> {
+            String username = usernameInput.getText();
+            char[] password = passwordInput.getText().toCharArray();
+            char[] confirmPassword = confirmPasswordInput.getText().toCharArray();
+            // create admin
+            if (Arrays.equals(password, confirmPassword)) {
+                if (adminUser == null) {
+                    adminUser = new Admin(username, password);
+                    adminUser.addRole(Role.ADMIN);
+                    userList.add(adminUser);
+                    currentUser = adminUser;
+                    outputArea.appendText("Admin account created.\n");
+                } else {
+                    User newUser = new User(username, password);
+                    newUser.addRole(Role.STUDENT);  // Default role for regular users
+                    userList.add(newUser);
+                    currentUser = newUser;
+                    outputArea.appendText("User account created.\n");
+                }
+
+                usernameLabel.setVisible(false);
+                usernameInput.setVisible(false);
+                passwordLabel.setVisible(false);
+                passwordInput.setVisible(false);
+                confirmPasswordLabel.setVisible(false);
+                confirmPasswordInput.setVisible(false);
+                submitButton.setVisible(false);
+                cancelButton.setVisible(false);
+
+                collectUserInfo();  // Collect additional user information
+            } else {
+                outputArea.appendText("Passwords do not match. Please try again.\n");
+            }
+        });
+
+        cancelButton.setOnAction(event -> {
+            usernameInput.clear();
+            passwordInput.clear();
+            confirmPasswordInput.clear();
+            createUserButton.setDisable(false);
+        });
+
+        theStage.show();
     }
     
-   
-    // Finish setting up account
-    public static void finalLogin(User newUser) {
-    	// Acquire name and email from user
-    	System.out.println("Welcome user, you need to finalize your information");
-    	System.out.println("Enter email: ");
-        String email = scanner.nextLine();
-        System.out.println("Enter first name: ");
-        String firstName = scanner.nextLine();
-        System.out.println("Enter perfered first name: ");
-        String perferedFirstName = scanner.nextLine();
-        System.out.println("Enter middle name: ");
-        String middleName = scanner.nextLine();
-        System.out.println("Enter last name: ");
-        String lastName = scanner.nextLine();
-        // Create full name for the new user
-        Name fullname = new Name(firstName, middleName, lastName, perferedFirstName);
-        newUser.setFullName(fullname);
-        newUser.setEmail(email);
-        System.out.println("login print:");
-        newUser.displayUserInfo();
-    	
+    // Method used to collect the rest of the user details when signing up
+    private void collectUserInfo() {
+        outputArea.appendText("Please enter your personal details:\n");
+
+        // Create input fields for user details
+        Label firstNameLabel = new Label("First Name:");
+        TextField firstNameInput = new TextField();
+        Label middleNameLabel = new Label("Middle Name:");
+        TextField middleNameInput = new TextField();
+        Label lastNameLabel = new Label("Last Name:");
+        TextField lastNameInput = new TextField();
+        Label preferredNameLabel = new Label("Preferred Name:");
+        TextField preferredNameInput = new TextField();
+        Label emailLabel = new Label("Email:");
+        TextField emailInput = new TextField();
+
+        Button submitDetailsButton = new Button("Submit Details");
+        Button cancelDetailsButton = new Button("Cancel");
+
+        // Create a VBox to hold the user info inputs
+        VBox userInfoBox = new VBox(10, firstNameLabel, firstNameInput, 
+                                     middleNameLabel, middleNameInput,
+                                     lastNameLabel, lastNameInput,
+                                     preferredNameLabel, preferredNameInput,
+                                     emailLabel, emailInput,
+                                     submitDetailsButton, cancelDetailsButton);
+        userInfoBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(userInfoBox);
+
+        // Submit button action for user details
+        submitDetailsButton.setOnAction(event -> {
+            String firstName = firstNameInput.getText();
+            String middleName = middleNameInput.getText();
+            String lastName = lastNameInput.getText();
+            String preferredName = preferredNameInput.getText();
+            String email = emailInput.getText();
+
+            // Set the user details in the current user object
+            if (currentUser != null) {
+                currentUser.setFirstName(firstName);
+                currentUser.setMiddleName(middleName);
+                currentUser.setLastName(lastName);
+                currentUser.setPreferredName(preferredName);
+                currentUser.setEmail(email);
+            }
+
+            outputArea.appendText("User details saved.\n");
+            
+            // Clear the user info box
+            ((VBox) outputArea.getParent()).getChildren().remove(userInfoBox);
+            showUserOptions();  // Show the options for the user
+        });
+
+        // Cancel button action
+        cancelDetailsButton.setOnAction(event -> {
+            ((VBox) outputArea.getParent()).getChildren().remove(userInfoBox);
+            showUserOptions();  // Show the options for the user
+        });
     }
 
-	//Helper method to print char[] password
-	private static void printPassword(char[] password) {
-	    for (char c : password) {
-	        System.out.print(c);
-	    }
-	    System.out.println(); // Move to a new line after printing the password
-	}
-	
-	public static char[] passwordDoubleChecker() {
-		do {
-        	// enter password
-            System.out.print("Enter password: ");
-            char[] password = scanner.nextLine().toCharArray();
-            // Re enter the password
-            System.out.print("Re enter the password: ");
-            char[] secondPassword = scanner.nextLine().toCharArray();
-            
-            // Compare the two passwords using Arrays.equals()
-            if (Arrays.equals(password, secondPassword)) {
-                System.out.println("Passwords match.");
-                return password;
-            } else {
-                System.out.println("Passwords do not match.");
+    // Method acts as the home page for the users
+    private void showUserOptions() {
+        outputArea.appendText("What would you like to do? Options:\n");
+
+        clearPreviousOptionBox();  // Ensure only one options box is visible
+
+        // Clear the optionBox before adding new options
+        optionBox.getChildren().clear();
+
+        // Create buttons for each user option
+        Button signOutButton = new Button("Sign out");
+        Button quitButton = new Button("Quit");
+
+        // Add admin options only if the current user is an admin
+        if (currentUser instanceof Admin) {
+            Button printUsersButton = new Button("Print users");
+            Button deleteUserButton = new Button("Delete user");
+            Button inviteUserButton = new Button("Invite a user");
+
+            // Set button actions
+            printUsersButton.setOnAction(e -> listUsers());
+            deleteUserButton.setOnAction(e -> deleteUser());
+            inviteUserButton.setOnAction(e -> inviteUser());
+
+            optionBox.getChildren().addAll(
+                new Label("Select an option:"),
+                signOutButton,
+                printUsersButton,
+                deleteUserButton,
+                inviteUserButton,
+                quitButton
+            );
+        } else {
+            // For regular users and instructors, only show sign out and quit options
+            optionBox.getChildren().addAll(
+                new Label("Select an option:"),
+                signOutButton,
+                quitButton
+            );
+        }
+
+        // Set sign out and quit button actions
+        signOutButton.setOnAction(e -> signOut());
+        quitButton.setOnAction(e -> {
+            outputArea.appendText("Goodbye!\n");
+            System.exit(0);
+        });
+
+        optionBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(optionBox);
+    }
+
+    // Sign out method
+    private void signOut() {
+        outputArea.appendText("You have signed out.\n");
+        currentUser = null;
+        showSignInOrCreateAccount();
+    }
+
+    // This page gives users the option to login or create an accounut
+    private void showSignInOrCreateAccount() {
+        outputArea.appendText("Select an option:\n");
+
+        clearPreviousOptionBox();  // Ensure only one options box is visible
+
+        // Clear the optionBox before adding new options
+        optionBox.getChildren().clear();
+
+        // Create buttons for login and create account options
+        Button loginButton = new Button("Login");
+        Button createAccountButton = new Button("Create Account");
+
+        // Set button actions
+        loginButton.setOnAction(e -> loginPrompt());
+        createAccountButton.setOnAction(e -> createAccount());
+
+        // Add buttons to the option box
+        optionBox.getChildren().setAll(
+            new Label("Select an option:"),
+            loginButton,
+            createAccountButton
+        );
+
+        optionBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(optionBox);
+    }
+
+    // This method serves as the login page
+    // FIXME add role selection screen 
+    private void loginPrompt() {
+        outputArea.appendText("Enter username and password to log in or enter an invitation code.\n");
+
+        Label usernameLabel = new Label("Username:");
+        TextField usernameInput = new TextField();
+        Label passwordLabel = new Label("Password:");
+        PasswordField passwordInput = new PasswordField();
+        Button loginButton = new Button("Login");
+        Button invitationButton = new Button("I have an invite code");
+        Button backButton = new Button("Back");
+
+        VBox loginBox = new VBox(10, usernameLabel, usernameInput, passwordLabel, passwordInput, loginButton, invitationButton, backButton);
+        loginBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(loginBox);
+        
+        clearPreviousOptionBox();
+
+        loginButton.setOnAction(event -> {
+            String username = usernameInput.getText();
+            char[] password = passwordInput.getText().toCharArray();
+            boolean userFound = false;
+
+            for (User user : userList) {
+                if (user.getUsername().equals(username) && Arrays.equals(password, user.getPassword())) {
+                    outputArea.appendText("Login successful.\n");
+                    currentUser = user;
+                    userFound = true;
+                    ((VBox) outputArea.getParent()).getChildren().remove(loginBox);
+                    showUserOptions();
+                    break;
+                }
             }
-        } while(true);
-	}
+            if (!userFound) {
+                outputArea.appendText("User not found or incorrect password.\n");
+            }
+        });
+        // if the invite button is clicked the user will be taken to the invitation screen
+        invitationButton.setOnAction(event -> {
+        	((VBox) outputArea.getParent()).getChildren().remove(loginBox);
+        	inviteLogin();
+        });
+        
+        // Back button functionality
+        backButton.setOnAction(event -> {
+            ((VBox) outputArea.getParent()).getChildren().remove(loginBox);
+            showSignInOrCreateAccount();  // Show the sign-in/create account options again
+        });
+    }
 
-	public void start(Stage theStage) 
-	{
-		theStage.setTitle("ASU Help System");
-		Pane firstLogin = new Pane();
-		
-		Text welcome = new Text();
-		welcome.setText("Welcome");
-		
-		Text userOne = new Text();
-		userOne.setText("You are the first user and will be made an Admin.");
-		
-		Button createUser = new Button();
-		createUser.setText("Create User");
-		
-		Label usernameLabel = new Label("Enter Username: ");
-		TextField usernameInput = new TextField();
-		
-		Label passwordLabel = new Label("Enter Password: ");
-		PasswordField passwordInput = new PasswordField();
-		
-		Label passwordCheckLabel = new Label("Confirm Password: ");
-		PasswordField passwordCheck = new PasswordField();
-		
-		firstLogin.getChildren().addAll(welcome, userOne, createUser, usernameLabel, usernameInput,
-				passwordLabel, passwordInput, passwordCheckLabel, passwordCheck);
-		welcome.setLayoutX(225);
-		welcome.setLayoutY(100);
-		
-		userOne.setLayoutX(120);
-		userOne.setLayoutY(125);
-		
-		createUser.setLayoutX(214);
-		createUser.setLayoutY(325);
-		
-		usernameLabel.setLayoutX(207);
-		usernameLabel.setLayoutY(150);
-		
-		usernameInput.setLayoutX(180);
-		usernameInput.setLayoutY(170);
-		
-		passwordLabel.setLayoutX(210);
-		passwordLabel.setLayoutY(205);
-		
-		passwordInput.setLayoutX(180);
-		passwordInput.setLayoutY(225);
-		
-		passwordCheckLabel.setLayoutX(200);
-		passwordCheckLabel.setLayoutY(260);
-		
-		passwordCheck.setLayoutX(180);
-		passwordCheck.setLayoutY(280);
+    // If a user has an invite code this screen allows them to create their accounut 
+    // FIXME add roles
+    private void inviteLogin() {
+    	// Inform the user
+        outputArea.appendText("Enter your invite code.\n");
 
-		Scene firstLoginView = new Scene(firstLogin, 500, 500);
-		
-		Pane defaultLogin = new Pane();
-		
-		Button login = new Button("Login");
-		
-		Text loginPrompt = new Text("Please enter credentials to log in:");
-		
-		defaultLogin.getChildren().addAll(welcome, login, loginPrompt, usernameLabel, usernameInput,
-				passwordLabel, passwordInput, passwordCheckLabel, passwordCheck);
-		
-		login.setLayoutX(214);
-		login.setLayoutY(325);
-		
-		loginPrompt.setLayoutX(160);
-		loginPrompt.setLayoutY(125);
-		
-		Scene defaultLoginView = new Scene(defaultLogin, 500, 500);
-		
-		Pane inviteLogin = new Pane();
-		
-		Label inviteCodeLabel = new Label("Enter Invite Code: ");
-		
-		TextField inviteCode = new TextField();
-		
-		inviteLogin.getChildren().addAll(welcome, inviteCodeLabel, inviteCode, 
-				usernameLabel, usernameInput, passwordLabel, passwordInput, passwordCheckLabel,
-				passwordCheck, createUser);
-		
-		inviteCodeLabel.setLayoutX(120);
-		inviteCodeLabel.setLayoutY(118);
-		
-		inviteCode.setLayoutX(220);
-		inviteCode.setLayoutY(115);
-		
-		Scene inviteLoginView = new Scene(inviteLogin, 500, 500);
-		
-		Pane studentHome = new Pane();
-		
-		Button logout = new Button("Log Out");
-		
-		studentHome.getChildren().add(logout);
-		
-		logout.setLayoutX(225);
-		logout.setLayoutY(225);
-		
-		Scene studentHomeView = new Scene(studentHome, 500, 500);
-		
-		Pane instructorHome = new Pane();
-		
-		instructorHome.getChildren().add(logout);
-		
-		Scene instructorHomeView = new Scene(instructorHome, 500, 500);
-		
-		Scene firstLoginView = new Scene(firstLogin, 500, 500);
-		theStage.setScene(firstLoginView);
-		theStage.show();
-		
-	}
+        // Create input fields for the invite code, username, and password
+        Label inviteLabel = new Label("Invite Code:");
+        TextField inviteInput = new TextField();
+        Label usernameLabel = new Label("Username:");
+        TextField usernameInput = new TextField();
+        Label passwordLabel = new Label("Password:");
+        PasswordField passwordInput = new PasswordField();
+        Label confirmPasswordLabel = new Label("Confirm Password:");
+        PasswordField confirmPasswordInput = new PasswordField();
+
+        // Create buttons
+        Button submitButton = new Button("Submit");
+        Button backButton = new Button("Back");
+
+        // Layout for the invite login form
+        VBox inviteBox = new VBox(10, inviteLabel, inviteInput, usernameLabel, usernameInput, passwordLabel, 
+                                  passwordInput, confirmPasswordLabel, confirmPasswordInput, submitButton, backButton);
+        inviteBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(inviteBox);
+
+        // Clear any previous options
+        clearPreviousOptionBox();
+
+        // Event handler for the submit button
+        submitButton.setOnAction(event -> {
+            // Get the invite code and validate it
+            String inviteCode = inviteInput.getText();
+            if (inviteCode.equals("STUDENTCODE")) {
+                processInviteCode(usernameInput, passwordInput, confirmPasswordInput, Role.STUDENT, inviteBox);
+            } else if (inviteCode.equals("INSTRUCTORCODE")) {
+                processInviteCode(usernameInput, passwordInput, confirmPasswordInput, Role.INSTRUCTOR, inviteBox);
+            } else if (inviteCode.equals("ADMINCODE")) {
+                processInviteCode(usernameInput, passwordInput, confirmPasswordInput, Role.ADMIN, inviteBox);
+            } else {
+                outputArea.appendText("Invalid invitation code. Please try again.\n");
+            }
+        });
+
+        // Event handler for the back button
+        backButton.setOnAction(event -> {
+            // Remove the invite login form and show the login page again
+            ((VBox) outputArea.getParent()).getChildren().remove(inviteBox);
+            loginPrompt();  // Return to the login screen
+        });
+    }
+    
+    // Method used to create a new user given the details from the invite screen
+    private void processInviteCode(TextField usernameInput, PasswordField passwordInput, PasswordField confirmPasswordInput, Role role, VBox createBox) {
+        String username = usernameInput.getText();
+        char[] password = passwordInput.getText().toCharArray();
+        char[] confirmPassword = confirmPasswordInput.getText().toCharArray();
+
+        // Check if passwords match
+        if (Arrays.equals(password, confirmPassword)) {
+            User newUser = new User(username, password);
+            newUser.addRole(role);
+
+            // Collect additional user information
+            clearPreviousOptionBox();
+            collectUserInfo();  // Pass the newUser object to collectUserInfo
+            userList.add(newUser);
+            currentUser = newUser;
+            outputArea.appendText(role.name() + " account created successfully.\n");
+
+            // After account creation, transition back to the login screen
+            ((VBox) outputArea.getParent()).getChildren().remove(createBox);
+            //loginPrompt();
+        } else {
+            outputArea.appendText("Passwords don't match. Please try again.\n");
+        }
+    }
+
+    // Method used to create a new account
+    private void createAccount() {
+        outputArea.appendText("Enter details to create a new account.\n");
+
+        // Create input fields for username and password
+        Label usernameLabel = new Label("Username:");
+        TextField usernameInput = new TextField();
+        Label passwordLabel = new Label("Password:");
+        PasswordField passwordInput = new PasswordField();
+        Label confirmPasswordLabel = new Label("Confirm Password:");
+        PasswordField confirmPasswordInput = new PasswordField();
+
+        // Create radio buttons for user roles
+        RadioButton studentRadioButton = new RadioButton("Student");
+        RadioButton instructorRadioButton = new RadioButton("Instructor");
+        ToggleGroup roleToggleGroup = new ToggleGroup();
+        studentRadioButton.setToggleGroup(roleToggleGroup);
+        instructorRadioButton.setToggleGroup(roleToggleGroup);
+        studentRadioButton.setSelected(true);
+
+        // Create buttons
+        Button createButton = new Button("Create");
+        Button backButton = new Button("Back");
+
+        // Create a VBox for input fields
+        VBox createBox = new VBox(10, usernameLabel, usernameInput, passwordLabel, passwordInput,
+                                  confirmPasswordLabel, confirmPasswordInput,
+                                  studentRadioButton, instructorRadioButton, 
+                                  createButton, backButton);
+        createBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(createBox);
+        
+        clearPreviousOptionBox();
+
+        createButton.setOnAction(event -> {
+            String username = usernameInput.getText();
+            char[] password = passwordInput.getText().toCharArray();
+            char[] confirmPassword = confirmPasswordInput.getText().toCharArray();
+
+            if (Arrays.equals(password, confirmPassword)) {
+                User newUser = new User(username, password);
+                if (instructorRadioButton.isSelected()) {
+                    newUser.addRole(Role.INSTRUCTOR);
+                    outputArea.appendText("Instructor account created successfully.\n");
+                } else {
+                    newUser.addRole(Role.STUDENT);
+                    outputArea.appendText("Student account created successfully.\n");
+                }
+
+                // Collect additional user information
+                collectUserInfo(); // Pass the newUser object to collectUserInfo
+
+                userList.add(newUser);
+                currentUser = newUser;
+                ((VBox) outputArea.getParent()).getChildren().remove(createBox);
+            } else {
+                outputArea.appendText("Passwords do not match. Please try again.\n");
+            }
+        });
+
+        backButton.setOnAction(event -> {
+            ((VBox) outputArea.getParent()).getChildren().remove(createBox);
+            showSignInOrCreateAccount();  // Show the sign-in/create account options again
+        });
+    }
+
+    // admin function to invite a user
+    private void inviteUser() {
+        // Clear previous output and prepare the invite user view
+        outputArea.appendText("Invite a new user.\n");
+
+        // Label above check boxs
+        Label title = new Label("Check the roles to assign to the new user:");
+        // Check boxes for role selection (multiple roles can be selected)
+        CheckBox studentCheckBox = new CheckBox("Student");
+        CheckBox instructorCheckBox = new CheckBox("Instructor");
+        CheckBox adminCheckBox = new CheckBox("Admin");
+
+        // Button to invite the user
+        Button inviteButton = new Button("Invite User");
+        Button backButton = new Button("Back");
+
+        // VBox layout to arrange the components vertically
+        VBox inviteBox = new VBox(10, title, studentCheckBox, instructorCheckBox, adminCheckBox, 
+        		inviteButton, backButton);
+        inviteBox.setAlignment(Pos.CENTER);  // Align the components to the center
+
+        // Add the new inviteBox to the existing VBox containing the outputArea
+        ((VBox) outputArea.getParent()).getChildren().add(inviteBox);
+
+        // Clear any previous option boxes
+        clearPreviousOptionBox();
+
+        // Set the action for when the "Invite User" button is pressed
+        inviteButton.setOnAction(event -> {
+        	// Add roles and print messages based on which check boxes are selected
+        	if (studentCheckBox.isSelected() && instructorCheckBox.isSelected() && adminCheckBox.isSelected()) {
+            	outputArea.appendText("Invite code: ADMININSSTUINVCODE.\n");
+            }
+        	else if (studentCheckBox.isSelected() && instructorCheckBox.isSelected()) {
+                outputArea.appendText("Invite code: STUDENTINSINVCODE.\n");
+            }
+        	else if (studentCheckBox.isSelected() && adminCheckBox.isSelected()) {
+            	outputArea.appendText("Invite code: STUADINVCODE.\n");            
+            }
+        	else if (instructorCheckBox.isSelected() && adminCheckBox.isSelected()) {
+            	outputArea.appendText("Invite code: ADMININSINVCODE.\n");
+            }
+        	else if (studentCheckBox.isSelected()) {
+                outputArea.appendText("Invite code: STUDENTINVCODE.\n");
+            }
+        	else if (instructorCheckBox.isSelected()) {
+            	outputArea.appendText("Invite code: INSTRUCTORINVCODE.\n");            
+            }
+        	else if (adminCheckBox.isSelected()) {
+            	outputArea.appendText("Invite code: ADMININVCODE.\n");
+            }
+            else {
+                outputArea.appendText("No role selected. Please select at least one role.\n");
+            }
+            // Remove the createBox from the UI after successful account creation
+            ((VBox) outputArea.getParent()).getChildren().remove(inviteBox);
+            showUserOptions();
+
+        });
+
+        // Set the action for when the "Back" button is pressed
+        backButton.setOnAction(event -> {
+            ((VBox) outputArea.getParent()).getChildren().remove(inviteBox);  // Remove the inviteBox
+            showSignInOrCreateAccount();  // Show the previous sign-in/create account options again
+        });
+    }
+    
+    // method used to clear the previous option box
+    private void clearPreviousOptionBox() {
+        if (optionBox.getParent() != null) {
+            ((VBox) outputArea.getParent()).getChildren().remove(optionBox);
+        }
+    }
+
+    // admin method used to list all users
+    private void listUsers() {
+        outputArea.appendText("List of users:\n");
+        for (User user : userList) {
+            StringBuilder userInfo = new StringBuilder(user.getUsername());
+
+            // Append names
+            userInfo.append(" - Name: ");
+            userInfo.append(user.getFirstName() != null ? user.getFirstName() : "N/A").append(" ");
+            userInfo.append(user.getMiddleName() != null ? user.getMiddleName() : "N/A").append(" ");
+            userInfo.append(user.getLastName() != null ? user.getLastName() : "N/A").append(" ");
+
+            // Append email
+            userInfo.append(" - Email: ");
+            userInfo.append(user.getEmail() != null ? user.getEmail() : "N/A").append(" ");
+
+            // Append roles
+            if (user.getRoles() != null && !user.getRoles().isEmpty()) {
+                userInfo.append(" - Role: ");
+                for (Role role : user.getRoles()) {
+                    userInfo.append(role.name()).append(" ");
+                }
+            }
+            
+            outputArea.appendText(userInfo.toString().trim() + "\n");
+        }
+    }
+
+    // admin method used to delete a user
+    private void deleteUser() {
+        outputArea.appendText("Delete a user by entering the username.\n");
+        TextField usernameInput = new TextField();
+        Button deleteButton = new Button("Delete");
+        Button backButton = new Button("Back");
+
+        VBox deleteBox = new VBox(10, new Label("Enter username:"), usernameInput, deleteButton, backButton);
+        deleteBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(deleteBox);
+        
+        // Hide options while deleting
+        clearPreviousOptionBox();
+
+        deleteButton.setOnAction(event -> {
+            String username = usernameInput.getText();
+            
+            // Create an alert dialog for confirmation
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.setTitle("Confirmation");
+            alert.setHeaderText("Are you sure you want to delete the user: " + username + "?");
+            alert.setContentText("This action cannot be undone.");
+
+            // Show the confirmation dialog and wait for user response
+            Optional<ButtonType> result = alert.showAndWait();
+
+            // Check if the user clicked the OK button
+            if (result.isPresent() && result.get() == ButtonType.OK) {
+                // Proceed with deletion
+                boolean userRemoved = userList.removeIf(user -> user.getUsername().equals(username));
+                if (userRemoved) {
+                    outputArea.appendText("User " + username + " has been deleted.\n");
+                } else {
+                    outputArea.appendText("User not found.\n");
+                }
+            } else {
+                outputArea.appendText("Deletion canceled.\n");
+            }
+            
+            // Remove the delete box after action is completed
+            ((VBox) outputArea.getParent()).getChildren().remove(deleteBox);
+            showUserOptions();  // Show options again after deletion
+        });
+
+        // Back button functionality
+        backButton.setOnAction(event -> {
+            ((VBox) outputArea.getParent()).getChildren().remove(deleteBox);
+            showUserOptions();  // Show options again when going back
+        });
+    }
 }

@@ -10,7 +10,10 @@ public class User {
     private boolean isOneTimePassword;  // Flag for one-time password
     private LocalDateTime otpExpiry;  // Date and time when the one-time password expires
     private String email;
-    private Name fullName;  // Encapsulates first, middle, last, and preferred name
+    private String firstName;
+    private String middleName;
+    private String lastName;
+    private String preferredName;
     private Set<Role> roles;  // Set of roles for the user
     private Set<TopicProficiency> topicProficiencies;  // Set of topic proficiencies
 
@@ -90,7 +93,7 @@ public class User {
     // Method to display user info
     public void displayUserInfo() {
         System.out.println("Username: " + username);
-        System.out.println("Name: " + fullName.getFirstName() + " " + fullName.getMiddleName() + " " + fullName.getLastName());
+        System.out.println("Name: " + firstName + " " + middleName + " " + lastName);
         System.out.println("Email: " + email);
         System.out.println("Roles: " + roles);
         System.out.println("One-Time Password: " + (isOneTimePassword ? "Yes" : "No"));
@@ -153,16 +156,40 @@ public class User {
         this.email = email;
     }
 
-    public Name getFullName() {
-        return fullName;
+    public String getFirstName() {
+        return firstName;
+    }
+    
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+    
+    public String getMiddleName() {
+        return middleName;
+    }
+    
+    public void setMiddleName(String middleName) {
+        this.middleName = middleName;
+    }
+    
+    public String getLastName() {
+        return lastName;
+    }
+    
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+    
+    public String getPreferredName() {
+        return preferredName;
+    }
+    
+    public void setPreferredName(String preferredName) {
+        this.preferredName = preferredName;
     }
 
     public Set<Role> getRoles() {
         return roles;
-    }
-    
-    public void setFullName(Name fullName) {
-        this.fullName = fullName;
     }
 
 
@@ -182,23 +209,6 @@ public class User {
 
         public String getFullName() {
             return preferredName != null ? preferredName : firstName + " " + middleName + " " + lastName;
-        }
-
-        // Getters for each part of the name
-        public String getFirstName() {
-            return firstName;
-        }
-
-        public String getMiddleName() {
-            return middleName;
-        }
-
-        public String getLastName() {
-            return lastName;
-        }
-
-        public String getPreferredName() {
-            return preferredName;
         }
     }
 }

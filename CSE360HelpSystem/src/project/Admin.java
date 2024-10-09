@@ -11,7 +11,7 @@ public class Admin extends User {
     }
 
     // Method to invite a user
-    public void inviteUser(String username, char[] password, String firstName, String lastName, String email, List<User> userList) {
+    public void inviteUser(String username, char[] password, String firstName, String middleName, String lastName, String preferredName, String email, List<User> userList) {
         // check if user exists
     	for (User user : userList) {
             if (user.getUsername() == (username)) {
@@ -21,7 +21,10 @@ public class Admin extends User {
         
     	// create student
         User newUser = new User(username, password);
-        newUser.setFullName(new Name(firstName, "", lastName, ""));
+        newUser.setFirstName(firstName);
+        newUser.setMiddleName(middleName);
+        newUser.setLastName(lastName);
+        newUser.setPreferredName(preferredName);
         newUser.setEmail(email);
         newUser.addRole(Role.STUDENT);  
         
@@ -68,8 +71,8 @@ public class Admin extends User {
         System.out.println("Listing all users:");
         for (User user : userList) {
             System.out.println("Username: " + user.getUsername());
-            System.out.println("First name: " + user.getFullName().getFirstName());
-            System.out.println("Last name: " + user.getFullName().getLastName());
+            System.out.println("First name: " + user.getFirstName());
+            System.out.println("Last name: " + user.getLastName());
             System.out.println("Email: " + user.getEmail());
             System.out.println("Roles: " + user.getRoles());
             System.out.println();

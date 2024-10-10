@@ -4,10 +4,23 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+
+/*******
+ * <p> User class </p>
+ * 
+ * <p> Description:  It represents the general users in the system.<p> 
+ * <p> Stores information about the users such as username, password, roles, personal information, etc.<p>
+ * <p> Manages roles and provides methods to implement role-related behavior, like addRole, removeRole, hasRole.<p> 
+ * <p> Collaborators: Role, Admin.</p>
+ * 
+ * @author Hassan Khan, Colby Taylor, Xavier Flores, Shashwat Balaji, Avinash Poguluri, Abil Damirbek uulu
+*/
+
 public class User {
     private String username;
     private char[] password;  // Non-string data type for password
     private boolean isOneTimePassword;  // Flag for one-time password
+    private String oneTimePassword;
     private LocalDateTime otpExpiry;  // Date and time when the one-time password expires
     private String email;
     private String firstName;
@@ -139,6 +152,14 @@ public class User {
     public void setOneTimePassword(boolean oneTimePassword) {
         isOneTimePassword = oneTimePassword;
     }
+    
+    public String getOneTimePassword() {
+    	return oneTimePassword;
+    }
+    
+    public void setOneTimePassword(String oneTimePassword) {
+    	this.oneTimePassword = oneTimePassword;
+    }
 
     public LocalDateTime getOtpExpiry() {
         return otpExpiry;
@@ -199,14 +220,14 @@ public class User {
         private String middleName;
         private String lastName;
         private String preferredName;
-
+        //initial constructor for Name class
         public Name(String firstName, String middleName, String lastName, String preferredName) {
             this.firstName = firstName;
             this.middleName = middleName;
             this.lastName = lastName;
             this.preferredName = preferredName;
         }
-
+        // return user' full name
         public String getFullName() {
             return preferredName != null ? preferredName : firstName + " " + middleName + " " + lastName;
         }

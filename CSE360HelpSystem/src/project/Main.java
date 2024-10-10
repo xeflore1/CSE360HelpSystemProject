@@ -1,3 +1,4 @@
+
 package project;
 
 import javafx.application.Application;
@@ -15,7 +16,23 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.Random;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+/*******
+ * <p> Main class </p>
+ * 
+ * <p> Description:  It represents the main function of the whole application.</p> 
+ * <p> Stores and creates the VBox used to create the help system. </p>
+ * <p> Manages the GUI and includes the user creation and management </p> 
+ * <p> Collaborators: Role, Admin, User</p>
+ * 
+ * @author Hassan Khan, Colby Taylor, Xavier Flores, Shashwat Balaji, Avinash Poguluri, Abil Damirbek uulu
+*/
 public class Main extends Application {
     private static List<User> userList = new ArrayList<>();
     private Admin adminUser = null;
@@ -23,12 +40,24 @@ public class Main extends Application {
     private TextArea outputArea = new TextArea();
     private VBox optionBox = new VBox(10);  // Reusable optionBox to prevent multiple instances
 
+    /**********************************************************************************************
+	 * This is the method that performs the test cases
+	 * 
+	 * @param args	The standard argument list for a Java Mainline
+	 * 
+	 */
     public static void main(String[] args) {
         launch(args);
     }
 
+    /*********
+     * This is the method that create the VBox from javafx and sets up the starting
+     * screen of the help system. 
+     * 
+     * @param theStage    The pop up stage that handles all of the user interaction
+     */
     @Override
-    public void start(Stage theStage) {
+    public void start(Stage theStage) { // Method for the first user account created (admin)
         theStage.setTitle("ASU Help System");
 
         Pane firstLogin = new Pane();
@@ -134,7 +163,11 @@ public class Main extends Application {
         theStage.show();
     }
     
-    // Method used to collect the rest of the user details when signing up
+    /*********
+     * This is the method used to collect the rest of the user details when signing up.
+     * This involves collecting the first name, middle name, preferred name, last name and email
+     * 
+     */
     private void collectUserInfo() {
         outputArea.appendText("Please enter your personal details:\n");
 
@@ -182,20 +215,33 @@ public class Main extends Application {
 
             outputArea.appendText("User details saved.\n");
             
+            // admin should be taken to the login screen
+            if (currentUser instanceof Admin) {
+            	((VBox) outputArea.getParent()).getChildren().remove(userInfoBox);
+            	showSignInOrCreateAccount();
+            }
+            else {
             // Clear the user info box
             ((VBox) outputArea.getParent()).getChildren().remove(userInfoBox);
-            showUserOptions();  // Show the options for the user
+            Set<Role> currRole = currentUser.getRoles();
+            showUserOptions(Role.STUDENT);  // Show the options for the student user
+            }
         });
 
         // Cancel button action
         cancelDetailsButton.setOnAction(event -> {
             ((VBox) outputArea.getParent()).getChildren().remove(userInfoBox);
-            showUserOptions();  // Show the options for the user
+            loginPrompt();  // Show the options for the user
         });
     }
 
-    // Method acts as the home page for the users
-    private void showUserOptions() {
+    /*********
+     * This is the method that acts as the home page for the users. 
+     * Based on what role the user is the permissions will be different
+     * 
+     * @param role      The role of the user used to determine the visible options
+     */
+    private void showUserOptions(Role role) {
         outputArea.appendText("What would you like to do? Options:\n");
 
         clearPreviousOptionBox();  // Ensure only one options box is visible
@@ -208,22 +254,28 @@ public class Main extends Application {
         Button quitButton = new Button("Quit");
 
         // Add admin options only if the current user is an admin
-        if (currentUser instanceof Admin) {
+        if (role == Role.ADMIN) {
             Button printUsersButton = new Button("Print users");
             Button deleteUserButton = new Button("Delete user");
             Button inviteUserButton = new Button("Invite a user");
-
+            Button addOrRemoveRole = new Button("Add or remove a users role");
+            Button resetUserButton = new Button("Reset a user's password");
+            
             // Set button actions
             printUsersButton.setOnAction(e -> listUsers());
             deleteUserButton.setOnAction(e -> deleteUser());
             inviteUserButton.setOnAction(e -> inviteUser());
-
+            addOrRemoveRole.setOnAction(e -> addRemoveRole());
+            resetUserButton.setOnAction(e -> resetUser());
+            
             optionBox.getChildren().addAll(
                 new Label("Select an option:"),
                 signOutButton,
                 printUsersButton,
                 deleteUserButton,
                 inviteUserButton,
+                addOrRemoveRole,
+                resetUserButton,
                 quitButton
             );
         } else {
@@ -246,14 +298,18 @@ public class Main extends Application {
         ((VBox) outputArea.getParent()).getChildren().add(optionBox);
     }
 
-    // Sign out method
+    /*********
+     * This is the method used to sign out.
+     */
     private void signOut() {
         outputArea.appendText("You have signed out.\n");
         currentUser = null;
         showSignInOrCreateAccount();
     }
 
-    // This page gives users the option to login or create an accounut
+    /*********
+     * This is the method used to show the options when logged out
+     */
     private void showSignInOrCreateAccount() {
         outputArea.appendText("Select an option:\n");
 
@@ -281,8 +337,9 @@ public class Main extends Application {
         ((VBox) outputArea.getParent()).getChildren().add(optionBox);
     }
 
-    // This method serves as the login page
-    // FIXME add role selection screen 
+    /*********
+     * This is the method used to show the login prompt when clicked on login
+     */
     private void loginPrompt() {
         outputArea.appendText("Enter username and password to log in or enter an invitation code.\n");
 
@@ -292,9 +349,11 @@ public class Main extends Application {
         PasswordField passwordInput = new PasswordField();
         Button loginButton = new Button("Login");
         Button invitationButton = new Button("I have an invite code");
+        Button forgotPasswordButton = new Button("I forgot my password");
         Button backButton = new Button("Back");
 
-        VBox loginBox = new VBox(10, usernameLabel, usernameInput, passwordLabel, passwordInput, loginButton, invitationButton, backButton);
+        VBox loginBox = new VBox(10, usernameLabel, usernameInput, passwordLabel, passwordInput, 
+        		loginButton, invitationButton, forgotPasswordButton, backButton);
         loginBox.setAlignment(Pos.CENTER);
         ((VBox) outputArea.getParent()).getChildren().add(loginBox);
         
@@ -311,7 +370,7 @@ public class Main extends Application {
                     currentUser = user;
                     userFound = true;
                     ((VBox) outputArea.getParent()).getChildren().remove(loginBox);
-                    showUserOptions();
+                    promptRoleSelection(currentUser);
                     break;
                 }
             }
@@ -325,6 +384,12 @@ public class Main extends Application {
         	inviteLogin();
         });
         
+        // If the forgot password button is clicked
+        forgotPasswordButton.setOnAction(event -> {
+            ((VBox) outputArea.getParent()).getChildren().remove(loginBox);
+            resetLogin();  // Redirect to the reset password screen
+        });
+        
         // Back button functionality
         backButton.setOnAction(event -> {
             ((VBox) outputArea.getParent()).getChildren().remove(loginBox);
@@ -332,10 +397,62 @@ public class Main extends Application {
         });
     }
 
-    // If a user has an invite code this screen allows them to create their accounut 
-    // FIXME add roles
+    /*********
+     * This is the method that prompts the user for what role they want to choose
+     * for the current session
+     * 
+     * @param user      The user who is currently signed in
+     */
+    private void promptRoleSelection(User user) {
+        outputArea.appendText("Select a role for this session:\n");
+
+        clearPreviousOptionBox();  // Clear previous UI elements
+
+        optionBox.getChildren().clear();
+        
+        ToggleGroup roleToggleGroup = new ToggleGroup();
+
+        // Add radio buttons for each role
+        for (Role role : user.getRoles()) {
+            RadioButton roleOption = new RadioButton(role.toString());
+            roleOption.setToggleGroup(roleToggleGroup);
+            optionBox.getChildren().add(roleOption);
+        }
+
+        Button submitRoleButton = new Button("Submit");
+        optionBox.getChildren().add(submitRoleButton);
+
+        // Handle role selection
+        submitRoleButton.setOnAction(e -> { 
+        	// retrieve the selected button
+        	RadioButton selectedRadioButton = (RadioButton) roleToggleGroup.getSelectedToggle();
+        	// if admin was selected
+        	if (selectedRadioButton != null && selectedRadioButton.getText().equals("ADMIN")) {
+        	    showUserOptions(Role.ADMIN);
+        	}
+        	// if instructor was selected
+        	else if (selectedRadioButton != null && selectedRadioButton.getText().equals("INSTRUCTOR")) {
+        	    showUserOptions(Role.INSTRUCTOR);
+        	}
+        	// if student was selected
+        	else if (selectedRadioButton != null && selectedRadioButton.getText().equals("STUDENT")) {
+        	    showUserOptions(Role.STUDENT);
+        	}	 
+            else {
+                outputArea.appendText("Please select a role.\n");
+            }
+        });
+
+        optionBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(optionBox);
+    }
+    
+    
+    /*********
+     * This is the method used to show the login for when invite user is clicked.
+     */
     private void inviteLogin() {
-    	// Inform the user
+        // Inform the user
         outputArea.appendText("Enter your invite code.\n");
 
         // Create input fields for the invite code, username, and password
@@ -365,12 +482,25 @@ public class Main extends Application {
         submitButton.setOnAction(event -> {
             // Get the invite code and validate it
             String inviteCode = inviteInput.getText();
-            if (inviteCode.equals("STUDENTCODE")) {
-                processInviteCode(usernameInput, passwordInput, confirmPasswordInput, Role.STUDENT, inviteBox);
-            } else if (inviteCode.equals("INSTRUCTORCODE")) {
-                processInviteCode(usernameInput, passwordInput, confirmPasswordInput, Role.INSTRUCTOR, inviteBox);
-            } else if (inviteCode.equals("ADMINCODE")) {
-                processInviteCode(usernameInput, passwordInput, confirmPasswordInput, Role.ADMIN, inviteBox);
+            
+            // Single role codes
+            if (inviteCode.equals("STUDENTINVCODE")) {
+                processInviteCode(usernameInput, passwordInput, confirmPasswordInput, Arrays.asList(Role.STUDENT), inviteBox);
+            } else if (inviteCode.equals("INSTRUCTORINVCODE")) {
+                processInviteCode(usernameInput, passwordInput, confirmPasswordInput, Arrays.asList(Role.INSTRUCTOR), inviteBox);
+            } else if (inviteCode.equals("ADMININVCODE")) {
+                processInviteCode(usernameInput, passwordInput, confirmPasswordInput, Arrays.asList(Role.ADMIN), inviteBox);
+            }
+            
+            // Multiple roles codes
+            else if (inviteCode.equals("STUDENTINSINVCODE")) {
+                processInviteCode(usernameInput, passwordInput, confirmPasswordInput, Arrays.asList(Role.STUDENT, Role.INSTRUCTOR), inviteBox);
+            } else if (inviteCode.equals("STUADINVCODE")) {
+                processInviteCode(usernameInput, passwordInput, confirmPasswordInput, Arrays.asList(Role.STUDENT, Role.ADMIN), inviteBox);
+            } else if (inviteCode.equals("ADMININSINVCODE")) {
+                processInviteCode(usernameInput, passwordInput, confirmPasswordInput, Arrays.asList(Role.INSTRUCTOR, Role.ADMIN), inviteBox);
+            } else if (inviteCode.equals("ADMININSSTUINVCODE")) {
+                processInviteCode(usernameInput, passwordInput, confirmPasswordInput, Arrays.asList(Role.STUDENT, Role.INSTRUCTOR, Role.ADMIN), inviteBox);
             } else {
                 outputArea.appendText("Invalid invitation code. Please try again.\n");
             }
@@ -383,34 +513,151 @@ public class Main extends Application {
             loginPrompt();  // Return to the login screen
         });
     }
+   
+    /*********
+     * This is the method used to display the reset login page
+     */
+    private void resetLogin() {
+        outputArea.appendText("Enter your username and the OTP sent to your email:\n");
+
+        // Label and text fields for entering username and OTP
+        Label usernameLabel = new Label("Username:");
+        TextField usernameField = new TextField();
+        Label otpLabel = new Label("OTP:");
+        TextField otpField = new TextField();
+        
+        // Button to confirm OTP
+        Button confirmOtpButton = new Button("Confirm OTP");
+        Button backButton = new Button("Back");
+
+        // VBox layout to arrange the components vertically
+        VBox resetBox = new VBox(10, usernameLabel, usernameField, otpLabel, otpField, confirmOtpButton, backButton);
+        resetBox.setAlignment(Pos.CENTER);  // Align the components to the center
+
+        // Add the resetBox to the existing VBox containing the outputArea
+        ((VBox) outputArea.getParent()).getChildren().add(resetBox);
+
+        // Clear any previous option boxes
+        clearPreviousOptionBox();
+        
+     // Set the action for when the "Confirm OTP" button is pressed
+        confirmOtpButton.setOnAction(event -> {
+            String username = usernameField.getText().trim();
+            String enteredOtp = otpField.getText().trim();
+
+            User user = null; // Initialize user as null
+
+            // Iterate through userList to find the user by username
+            for (User u : userList) { // Assuming userList is a List<User> in your class
+                if (u.getUsername().equals(username)) {
+                    user = u; // Set user if found
+                    break; // Exit the loop
+                }
+            }
+
+            // Check if user exists and if the entered OTP matches the user's OTP
+            if (user != null && user.getOneTimePassword() != null && user.getOneTimePassword().equals(enteredOtp)) {
+                outputArea.appendText("OTP verified successfully. Please enter your new password:\n");
+                ((VBox) outputArea.getParent()).getChildren().remove(resetBox); // Remove current box
+                showNewPasswordForm(user); // Show form for new password
+            } else {
+                outputArea.appendText("Invalid username or OTP. OTP may have also expired. Please try again.\n");
+            }
+        });
+     // Set the action for when the "Back" button is pressed
+        backButton.setOnAction(event -> {
+            ((VBox) outputArea.getParent()).getChildren().remove(resetBox); // Remove resetBox
+            loginPrompt(); // Show login prompt again when going back
+        });
+    }
     
-    // Method used to create a new user given the details from the invite screen
-    private void processInviteCode(TextField usernameInput, PasswordField passwordInput, PasswordField confirmPasswordInput, Role role, VBox createBox) {
+    /*********
+     * This is the method used for generating a new password after successful OTP verification
+     */
+    private void showNewPasswordForm(User user) {
+        outputArea.appendText("Enter your new password:\n");
+
+        // Label and text fields for new password
+        Label newPasswordLabel = new Label("New Password:");
+        PasswordField newPasswordField = new PasswordField();
+        Label confirmPasswordLabel = new Label("Confirm Password:");
+        PasswordField confirmPasswordField = new PasswordField();
+        Button updatePasswordButton = new Button("Update Password");
+        Button cancelButton = new Button("Cancel");
+
+        // VBox layout for new password input
+        VBox passwordBox = new VBox(10, newPasswordLabel, newPasswordField, confirmPasswordLabel, confirmPasswordField, updatePasswordButton, cancelButton);
+        passwordBox.setAlignment(Pos.CENTER);
+        
+        // Add the passwordBox to the existing VBox containing the outputArea
+        ((VBox) outputArea.getParent()).getChildren().add(passwordBox);
+
+        // Set the action for when the "Update Password" button is pressed
+        updatePasswordButton.setOnAction(event -> {
+            char[] newPassword = newPasswordField.getText().toCharArray();
+            char[] confirmPassword = confirmPasswordField.getText().toCharArray();
+
+            if (Arrays.equals(newPassword, confirmPassword) && newPassword.length > 0) {
+                user.setPassword(newPassword); // Update user's password
+                outputArea.appendText("Password updated successfully. You can now log in with your new password.\n");
+                ((VBox) outputArea.getParent()).getChildren().remove(passwordBox); // Remove passwordBox
+                loginPrompt(); // Redirect to login
+            } else {
+                outputArea.appendText("Passwords do not match or are invalid. Please try again.\n");
+            }
+        });
+        
+     // Set the action for when the "Cancel" button is pressed
+        cancelButton.setOnAction(event -> {
+            ((VBox) outputArea.getParent()).getChildren().remove(passwordBox); // Remove passwordBox
+            loginPrompt(); // Redirect to login
+        });
+    }
+        
+    /*********
+     * This is the method used to create a new user given the details from the invite screen
+     * 
+     * @param usernameInput    what the user inputs for username
+     * @param passwordInput    what the user inputs for password
+     * @param confirmPasswordInput        what the user inputs for confirmPasswordInput
+     * @param roles    list of type Role of roles
+     * @param createBox    the VBox used for javafx
+     */
+    private void processInviteCode(TextField usernameInput, PasswordField passwordInput, PasswordField confirmPasswordInput, List<Role> roles, VBox createBox) {
         String username = usernameInput.getText();
         char[] password = passwordInput.getText().toCharArray();
         char[] confirmPassword = confirmPasswordInput.getText().toCharArray();
 
         // Check if passwords match
         if (Arrays.equals(password, confirmPassword)) {
+        	// create new user
             User newUser = new User(username, password);
-            newUser.addRole(role);
+
+            // Add all roles to the new user
+            for (Role role : roles) {
+                newUser.addRole(role);
+            }
 
             // Collect additional user information
             clearPreviousOptionBox();
             collectUserInfo();  // Pass the newUser object to collectUserInfo
             userList.add(newUser);
             currentUser = newUser;
-            outputArea.appendText(role.name() + " account created successfully.\n");
+
+            // Notify user of the roles created
+            outputArea.appendText("Account was successfully invited.\n");
 
             // After account creation, transition back to the login screen
             ((VBox) outputArea.getParent()).getChildren().remove(createBox);
-            //loginPrompt();
+        	
         } else {
             outputArea.appendText("Passwords don't match. Please try again.\n");
         }
     }
 
-    // Method used to create a new account
+    /*********
+     * This is the method used to create the account
+     */
     private void createAccount() {
         outputArea.appendText("Enter details to create a new account.\n");
 
@@ -476,7 +723,9 @@ public class Main extends Application {
         });
     }
 
-    // admin function to invite a user
+    /*********
+     * This is the method used for admins to invite a user
+     */
     private void inviteUser() {
         // Clear previous output and prepare the invite user view
         outputArea.appendText("Invite a new user.\n");
@@ -506,51 +755,148 @@ public class Main extends Application {
         // Set the action for when the "Invite User" button is pressed
         inviteButton.setOnAction(event -> {
         	// Add roles and print messages based on which check boxes are selected
+        	// student + instructor + admin
         	if (studentCheckBox.isSelected() && instructorCheckBox.isSelected() && adminCheckBox.isSelected()) {
-            	outputArea.appendText("Invite code: ADMININSSTUINVCODE.\n");
+            	outputArea.appendText("Invite code: ADMININSSTUINVCODE\n");
             }
+        	// student + instructor
         	else if (studentCheckBox.isSelected() && instructorCheckBox.isSelected()) {
-                outputArea.appendText("Invite code: STUDENTINSINVCODE.\n");
+                outputArea.appendText("Invite code: STUDENTINSINVCODE\n");
             }
+        	// student + admin
         	else if (studentCheckBox.isSelected() && adminCheckBox.isSelected()) {
-            	outputArea.appendText("Invite code: STUADINVCODE.\n");            
+            	outputArea.appendText("Invite code: STUADINVCODE\n");            
             }
+        	// instructor + admin
         	else if (instructorCheckBox.isSelected() && adminCheckBox.isSelected()) {
-            	outputArea.appendText("Invite code: ADMININSINVCODE.\n");
+            	outputArea.appendText("Invite code: ADMININSINVCODE\n");
             }
+        	// student
         	else if (studentCheckBox.isSelected()) {
-                outputArea.appendText("Invite code: STUDENTINVCODE.\n");
+                outputArea.appendText("Invite code: STUDENTINVCODE\n");
             }
+        	// instructor
         	else if (instructorCheckBox.isSelected()) {
-            	outputArea.appendText("Invite code: INSTRUCTORINVCODE.\n");            
+        		outputArea.appendText("Invite code: INSTRUCTORINVCODE\n");            
             }
+        	// admin
         	else if (adminCheckBox.isSelected()) {
-            	outputArea.appendText("Invite code: ADMININVCODE.\n");
+            	outputArea.appendText("Invite code: ADMININVCODE\n");
             }
             else {
                 outputArea.appendText("No role selected. Please select at least one role.\n");
             }
             // Remove the createBox from the UI after successful account creation
             ((VBox) outputArea.getParent()).getChildren().remove(inviteBox);
-            showUserOptions();
+            showUserOptions(Role.ADMIN);
 
         });
 
         // Set the action for when the "Back" button is pressed
         backButton.setOnAction(event -> {
             ((VBox) outputArea.getParent()).getChildren().remove(inviteBox);  // Remove the inviteBox
-            showSignInOrCreateAccount();  // Show the previous sign-in/create account options again
+            showUserOptions(Role.ADMIN);  // Show options again when going back(); 
         });
     }
     
-    // method used to clear the previous option box
+    /*********
+     * This is the method used by the admin to reset the password of a given user
+     */
+    private void resetUser() {
+        outputArea.appendText("Enter the username for password reset:\n");
+
+        // Label and text field for entering the username
+        Label title = new Label("Username:");
+        TextField usernameField = new TextField();
+        
+        // Button to generate OTP for password reset
+        Button generateOTPButton = new Button("Generate OTP");
+        Button backButton = new Button("Back");
+
+        // VBox layout to arrange the components vertically
+        VBox resetBox = new VBox(10, title, usernameField, generateOTPButton, backButton);
+        resetBox.setAlignment(Pos.CENTER);  // Align the components to the center
+
+        // Add the resetBox to the existing VBox containing the outputArea
+        ((VBox) outputArea.getParent()).getChildren().add(resetBox);
+
+        // Clear any previous option boxes
+        clearPreviousOptionBox();
+        
+        // Set the action for when the "Generate OTP" button is pressed
+        generateOTPButton.setOnAction(event -> {
+            String username = usernameField.getText().trim();
+            
+            if (!username.isEmpty()) {
+                User[] foundUser = new User[1]; // Use an array to hold the found user
+                
+                // Find the user by username within the same method
+                for (User user : userList) { // Assuming userList is a collection of users
+                    if (user.getUsername().equals(username)) {
+                        foundUser[0] = user; // Store the found user
+                        break; // Exit the loop if the user is found
+                    }
+                }
+                
+                if (foundUser[0] != null) {
+                    String otp = generateRandomString(7 + (int)(Math.random() * 6)); // Generate OTP
+                    foundUser[0].setOneTimePassword(otp); // Set the OTP for the user
+                    
+                    outputArea.appendText("OTP generated and sent to the user's email. It will expire in 5min.\n");
+                    outputArea.appendText("Generated OTP for user " + username + ": " + otp + "\n");
+                    
+                    ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+                    scheduler.schedule(() -> {
+                        String otpExpired = generateRandomString(7 + (int)(Math.random() * 6)); // Generate new OTP
+                        foundUser[0].setOneTimePassword(otpExpired); // Set the new OTP for the user
+                        outputArea.appendText("OTP for user " + username + " has expired and has been changed.\n");
+                    }, 5, TimeUnit.MINUTES);
+                    
+                 // Optionally disable the "Generate OTP" button to prevent multiple OTPs
+                    generateOTPButton.setDisable(true);
+                } else {
+                    outputArea.appendText("User not found. Please check the username.\n");
+                }
+            } else {
+                outputArea.appendText("Please enter a valid username.\n");
+            }
+        });
+
+        // Set the action for when the "Back" button is pressed
+        backButton.setOnAction(event -> {
+            // Remove the resetBox from the UI
+            ((VBox) outputArea.getParent()).getChildren().remove(resetBox);
+            showUserOptions(Role.ADMIN);  // Show options again when going back
+        });
+    }
+    
+    /*********
+     * This is the method used for generating a random string for invite code and OTPs
+     */
+    private String generateRandomString(int length) {
+        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"; // Adjust characters as needed
+        StringBuilder otpBuilder = new StringBuilder(length);
+        Random random = new Random();
+
+        for (int i = 0; i < length; i++) {
+            otpBuilder.append(characters.charAt(random.nextInt(characters.length())));
+        }
+        return otpBuilder.toString();
+    }
+        
+    
+    /*********
+     * This is the method used for clearing the previous option box
+     */
     private void clearPreviousOptionBox() {
         if (optionBox.getParent() != null) {
             ((VBox) outputArea.getParent()).getChildren().remove(optionBox);
         }
     }
 
-    // admin method used to list all users
+    /*********
+     * This is the method used for admins to list all users
+     */
     private void listUsers() {
         outputArea.appendText("List of users:\n");
         for (User user : userList) {
@@ -578,7 +924,133 @@ public class Main extends Application {
         }
     }
 
-    // admin method used to delete a user
+    /*********
+     * This is the method used for admins to add or remove a users role
+     */
+    private void addRemoveRole() {
+        // Inform the user
+        outputArea.appendText("Enter a username and select a role to add or remove.\n");
+
+        // Create input field for the username
+        Label usernameLabel = new Label("Username:");
+        TextField usernameInput = new TextField();
+
+        // Create radio buttons for roles
+        ToggleGroup roleGroup = new ToggleGroup();
+        RadioButton studentRadio = new RadioButton("Student");
+        studentRadio.setToggleGroup(roleGroup);
+        RadioButton instructorRadio = new RadioButton("Instructor");
+        instructorRadio.setToggleGroup(roleGroup);
+        RadioButton adminRadio = new RadioButton("Admin");
+        adminRadio.setToggleGroup(roleGroup);
+
+        // Create Add and Remove buttons
+        Button addButton = new Button("Add");
+        Button removeButton = new Button("Remove");
+        Button backButton = new Button("Back");
+
+        // Layout for the add/remove role form
+        VBox roleBox = new VBox(10, usernameLabel, usernameInput, studentRadio, instructorRadio, adminRadio, addButton, removeButton, backButton);
+        roleBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(roleBox);
+
+        // Clear any previous options
+        clearPreviousOptionBox();
+
+        // Event handler for the Add button
+        addButton.setOnAction(event -> {
+            String username = usernameInput.getText();
+            User user = findUserByUsername(username, userList); // Method to find user by username
+            if (user == null) {
+                outputArea.appendText("User not found.\n");
+                return;
+            }
+
+            Role selectedRole = getSelectedRole(roleGroup);
+            if (selectedRole != null) {
+                if (!user.getRoles().contains(selectedRole)) {
+                    user.addRole(selectedRole);
+                    outputArea.appendText("Added role " + selectedRole.name() + " to user " + username + ".\n");
+                } else {
+                    outputArea.appendText("User " + username + " already has the " + selectedRole.name() + " role.\n");
+                }
+            } else {
+                outputArea.appendText("Please select a role to add.\n");
+            }
+        });
+
+        // Event handler for the Remove button
+        removeButton.setOnAction(event -> {
+            String username = usernameInput.getText();
+            User user = findUserByUsername(username, userList); // Method to find user by username
+            if (user == null) {
+                outputArea.appendText("User not found.\n");
+                return;
+            }
+
+            Role selectedRole = getSelectedRole(roleGroup);
+            if (selectedRole != null) {
+                if (user.getRoles().contains(selectedRole)) {
+                    if (user.getRoles().size() > 1) {
+                        user.removeRole(selectedRole);
+                        outputArea.appendText("Removed role " + selectedRole.name() + " from user " + username + ".\n");
+                    } else {
+                        outputArea.appendText("User " + username + " only has one role. Cannot remove the only role.\n");
+                    }
+                } else {
+                    outputArea.appendText("User " + username + " does not have the " + selectedRole.name() + " role.\n");
+                }
+            } else {
+                outputArea.appendText("Please select a role to remove.\n");
+            }
+        });
+        
+        // Event handler for back button
+        backButton.setOnAction(event -> {
+            ((VBox) outputArea.getParent()).getChildren().remove(roleBox);  // Remove the inviteBox
+            showUserOptions(Role.ADMIN);  // Show options again when going back();  
+        });
+    }
+
+    /*********
+     * This is the method that gets the selected role from the rolegroup
+     * 
+     * @param roleGroup      The toggle group for roles
+     */
+    private Role getSelectedRole(ToggleGroup roleGroup) {
+        RadioButton selectedRadio = (RadioButton) roleGroup.getSelectedToggle();
+        if (selectedRadio != null) {
+            switch (selectedRadio.getText()) {
+                case "Student":
+                    return Role.STUDENT;
+                case "Instructor":
+                    return Role.INSTRUCTOR;
+                case "Admin":
+                    return Role.ADMIN;
+            }
+        }
+        return null;
+    }
+
+    /*********
+     * This is the method that finds the user by username
+     * 
+     * @param username      string username that is inputted
+     * @param userList      list of type users
+     */
+    private User findUserByUsername(String username, List<User> userList) {
+        // Implement this method to find and return a user by their username
+    	for(User user : userList) {
+    		if(user.getUsername().equals(username)) {
+    			return user;
+    		}
+    	}
+    	return null; 
+    }
+    
+    /*********
+     * This is the method used for admins to delete a user
+     */
     private void deleteUser() {
         outputArea.appendText("Delete a user by entering the username.\n");
         TextField usernameInput = new TextField();
@@ -619,13 +1091,13 @@ public class Main extends Application {
             
             // Remove the delete box after action is completed
             ((VBox) outputArea.getParent()).getChildren().remove(deleteBox);
-            showUserOptions();  // Show options again after deletion
+            showUserOptions(Role.ADMIN);  // Show options again after deletion
         });
 
         // Back button functionality
         backButton.setOnAction(event -> {
             ((VBox) outputArea.getParent()).getChildren().remove(deleteBox);
-            showUserOptions();  // Show options again when going back
+            showUserOptions(Role.ADMIN);  // Show options again when going back
         });
     }
 }

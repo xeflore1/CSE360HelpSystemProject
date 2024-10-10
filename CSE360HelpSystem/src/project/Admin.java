@@ -2,6 +2,16 @@ package project;
 
 import java.util.List;
 
+/*******
+ * <p> Admin class </p>
+ * 
+ * <p> Description:  Handles administrative tasks like inviting users, deleting users, listing users, assigning/removing roles.</p> 
+ * <p> A subclass of User provides general behavior with super administrative privileges.</p>
+ * <p> Collaborators: User, Role.</p> 
+ * 
+ * @author Hassan Khan, Colby Taylor, Xavier Flores, Shashwat Balaji, Avinash Poguluri, Abil Damirbek uulu
+*/
+
 public class Admin extends User {
 
 	// initial constructor

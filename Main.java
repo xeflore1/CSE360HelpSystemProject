@@ -268,26 +268,6 @@ public class Main extends Application {
 
             outputArea.appendText("User details saved.\n");
             
-            // Save the updated user list to the database
-            try {
-				databaseHelper.saveUserListToDatabase(userList);
-				// Debug print to verify users were added
-			    try {
-			        List<User> savedUsers = databaseHelper.loadUsersFromDatabase();
-			        System.out.println("Users in database after saving:");
-			        for (User user : savedUsers) {
-			            System.out.println(user.getUsername());
-			            System.out.println(user.getFirstName());
-			        }
-			    } catch (SQLException e) {
-			        System.err.println("Error retrieving users from database: " + e.getMessage());
-			    }
-				
-			} catch (Exception e) {
-				outputArea.appendText("Error saving list to database\n");
-				e.printStackTrace();
-			}
-            
             // admin should be taken to the login screen
             if (currentUser instanceof Admin) {
             	((VBox) outputArea.getParent()).getChildren().remove(userInfoBox);
@@ -363,6 +343,32 @@ public class Main extends Application {
         // Set sign out and quit button actions
         signOutButton.setOnAction(e -> signOut());
         quitButton.setOnAction(e -> {
+        	
+        	// Save the updated user list to the database
+            try {
+				databaseHelper.saveUserListToDatabase(userList);
+				// Debug print to verify users were added
+			    /*try {
+			    	System.out.println("Users in list:");
+			        for (User user : userList) {
+			            System.out.println("username: " + user.getUsername());
+			            System.out.println("first name: " + user.getFirstName());
+			        }
+			        List<User> savedUsers = databaseHelper.loadUsersFromDatabase();
+			        System.out.println("Users in database after saving:");
+			        for (User user : savedUsers) {
+			            System.out.println("username: " + user.getUsername());
+			            System.out.println("first name: " + user.getFirstName());
+			        }
+			    } catch (SQLException e1) {
+			        System.err.println("Error retrieving users from database: " + e1.getMessage());
+			    } */
+				
+			} catch (Exception e1) {
+				outputArea.appendText("Error saving list to database\n");
+				e1.printStackTrace();
+			}
+        	
             outputArea.appendText("Goodbye!\n");
             System.exit(0);
         });
@@ -1173,5 +1179,3 @@ public class Main extends Application {
             showUserOptions(Role.ADMIN);  // Show options again when going back
         });
     }
-
-}

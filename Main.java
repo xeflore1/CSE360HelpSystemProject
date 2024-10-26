@@ -23,7 +23,7 @@ import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -51,6 +51,7 @@ public class Main extends Application {
     private TextArea outputArea = new TextArea();
     private VBox optionBox = new VBox(10);  // Reusable optionBox to prevent multiple instances
     private static DatabaseHelper databaseHelper; // database variable
+    private Role currRole; // keeps track of the current role of the user
 
 
     /**********************************************************************************************
@@ -307,12 +308,13 @@ public class Main extends Application {
         Button quitButton = new Button("Quit");
 
         // Add admin options only if the current user is an admin
-        if (role == Role.ADMIN) {
+        if (currRole == Role.ADMIN) {
             Button printUsersButton = new Button("Print users");
             Button deleteUserButton = new Button("Delete user");
             Button inviteUserButton = new Button("Invite a user");
             Button addOrRemoveRole = new Button("Add or remove a users role");
             Button resetUserButton = new Button("Reset a user's password");
+            Button aritcleButton = new Button("Article settings");
             
             // Set button actions
             printUsersButton.setOnAction(e -> listUsers());
@@ -320,6 +322,14 @@ public class Main extends Application {
             inviteUserButton.setOnAction(e -> inviteUser());
             addOrRemoveRole.setOnAction(e -> addRemoveRole());
             resetUserButton.setOnAction(e -> resetUser());
+            aritcleButton.setOnAction(e -> {
+				try {
+					articleOptions();
+				} catch (Exception e1) {
+					outputArea.appendText("Error going to article options:\n");
+					e1.printStackTrace();
+				}
+			});
             
             optionBox.getChildren().addAll(
                 new Label("Select an option:"),
@@ -329,6 +339,7 @@ public class Main extends Application {
                 inviteUserButton,
                 addOrRemoveRole,
                 resetUserButton,
+                aritcleButton,
                 quitButton
             );
         } else {
@@ -507,7 +518,8 @@ public class Main extends Application {
         	RadioButton selectedRadioButton = (RadioButton) roleToggleGroup.getSelectedToggle();
         	// if admin was selected
         	if (selectedRadioButton != null && selectedRadioButton.getText().equals("ADMIN")) {
-        	    showUserOptions(Role.ADMIN);
+        		currRole = Role.ADMIN;
+        	    showUserOptions(currRole);
         	}
         	// if instructor was selected
         	else if (selectedRadioButton != null && selectedRadioButton.getText().equals("INSTRUCTOR")) {
@@ -1179,3 +1191,310 @@ public class Main extends Application {
             showUserOptions(Role.ADMIN);  // Show options again when going back
         });
     }
+
+    // Article setting menu:
+    private void articleOptions() throws Exception {        
+        
+    	outputArea.appendText("Select an option\n");
+        
+    	clearPreviousOptionBox();  // Ensure only one options box is visible
+        // Clear the optionBox before adding new options
+        optionBox.getChildren().clear();
+        
+        // All choices
+        Button listArticles = new Button("List articles");
+        Button createArticles = new Button("Create articles");
+        Button deleteArticles = new Button("Delete articles");
+        Button backupArticles = new Button("Backup articles");
+        Button restoreArticles = new Button("Restore articles");
+        Button back = new Button("Back");
+        
+        // Set button actions
+        listArticles.setOnAction(e -> {
+			try {
+				String temp = databaseHelper.listArticles();
+				outputArea.appendText(temp);
+			} catch (SQLException e1) {
+				outputArea.appendText("error listing articles");
+				e1.printStackTrace();
+			}
+		});
+        createArticles.setOnAction(e -> {
+			try {
+				createArticle();
+			} catch (Exception e1) {
+				outputArea.appendText("error creating article");
+				e1.printStackTrace();
+			}
+		});
+        deleteArticles.setOnAction(e -> {
+			try {
+				deleteArticle();
+			} catch (Exception e1) {
+				outputArea.appendText("error trying to delete article");
+				e1.printStackTrace();
+			}
+		});
+        backupArticles.setOnAction(e -> {
+			try {
+				backupArticles();
+			} catch (Exception e1) {
+				outputArea.appendText("error trying to call backup articles\n");
+				e1.printStackTrace();
+			}
+		});
+        restoreArticles.setOnAction(e -> {
+			try {
+				restoreArticles();
+			} catch (Exception e1) {
+				outputArea.appendText("error trying to call restore articles\n");
+				e1.printStackTrace();
+			}
+		});
+        back.setOnAction(e -> {
+        	//((VBox) outputArea.getParent()).getChildren().remove(deleteBox);
+            showUserOptions(currRole);  // Show options again when going back
+        });
+        
+        optionBox.getChildren().addAll(
+            new Label("Select an option:"),
+            listArticles,
+            createArticles,
+            deleteArticles,
+            backupArticles,
+            restoreArticles,
+            back
+        );
+        
+        optionBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(optionBox);
+    }
+    
+    private void createArticle() throws Exception {
+    	
+    	outputArea.appendText("Enter details to create a new account.\n");
+
+        // Create input fields for username and password
+    	Label level = new Label("Enter level:");
+        TextField levelInput = new TextField();
+    	Label group = new Label("Enter group:");
+        TextField groupInput = new TextField();
+    	Label title = new Label("Enter title:");
+        TextField titleInput = new TextField();
+        Label authors = new Label("Enter authors:");
+        TextField authorsInput = new TextField();
+        Label articleAbstract = new Label("Enter article abstract:");
+        TextField abstractInput = new TextField();
+        Label keywords = new Label("Enter keywords (comma-seperated):");
+        TextField keywordsInput = new TextField();
+        Label body = new Label("Enter body:");
+        TextField bodyInput = new TextField();
+        Label references = new Label("Enter references:");
+        TextField referencesInput = new TextField();
+        
+        // buttons
+        Button createButton = new Button("Create article");
+        Button backButton = new Button("Back");
+     
+        // Create a VBox for input fields
+        VBox createBox = new VBox(10, level, levelInput, group, groupInput, title, titleInput, authors, authorsInput,
+        		articleAbstract, abstractInput,
+        		keywords, keywordsInput, 
+        		body, bodyInput, references, referencesInput, createButton, backButton);
+        
+        createBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(createBox);
+        
+        clearPreviousOptionBox();
+        
+        createButton.setOnAction(event -> {
+	        char[] levelChar = levelInput.getText().toCharArray();
+	        char[] groupChar = groupInput.getText().toCharArray();
+	        char[] titleChar = titleInput.getText().toCharArray();
+	        char[] authorsChar = authorsInput.getText().toCharArray();
+	        char[] articleAbstractChar = abstractInput.getText().toCharArray();
+	        char[] keywordsChar = keywordsInput.getText().toCharArray();
+	        char[] bodyChar = bodyInput.getText().toCharArray();
+	        char[] referencesChar = referencesInput.getText().toCharArray();
+	
+	        try {
+				databaseHelper.createArticle(levelChar, groupChar, titleChar, authorsChar, 
+						articleAbstractChar, keywordsChar, bodyChar, referencesChar);
+				outputArea.appendText("Article created successfully.\n");
+				((VBox) outputArea.getParent()).getChildren().remove(createBox);
+				articleOptions();
+			} catch (SQLException e) {
+				outputArea.appendText("Article not created successfully.\n");
+				e.printStackTrace();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+        });
+        
+        backButton.setOnAction(event -> {
+            ((VBox) outputArea.getParent()).getChildren().remove(createBox);
+            try {
+				articleOptions();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}  // Show user options
+        });
+    }
+    
+    // Handles operation (3) from user-- deletes existing article objects from the database:
+    private void deleteArticle() throws Exception {
+        
+    	outputArea.appendText("Delete an article\n");
+
+        // Create input fields for sequence number
+    	Label seqNum = new Label("Enter article sequence number to delete:");
+        TextField seqNumInput = new TextField();
+        // Buttons
+    	Button deleteButton = new Button("Delete article");
+    	Button backButton = new Button("Back");
+    	
+    	// Create a VBox for input fields
+        VBox deleteBox = new VBox(10, seqNum, seqNumInput, deleteButton, backButton);
+        
+        deleteBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(deleteBox);
+        
+        clearPreviousOptionBox();
+        
+        // When delete is pressed
+        deleteButton.setOnAction(event -> {
+        	// get num input
+        	int num = Integer.parseInt(seqNumInput.getText());
+        	try {
+        		// call delete method
+				databaseHelper.deleteArticle(num);
+				outputArea.appendText("Article deleted successfully\n");
+				((VBox) outputArea.getParent()).getChildren().remove(deleteBox);
+				articleOptions();
+			} catch (SQLException e) {
+				outputArea.appendText("error when calling delete article\n");
+				e.printStackTrace();
+			} catch (Exception e) {
+				outputArea.appendText("error going back to article options\n");
+				e.printStackTrace();
+			}
+        });
+        
+        // when back is pressed
+        backButton.setOnAction(event -> {
+        	((VBox) outputArea.getParent()).getChildren().remove(deleteBox);
+            try {
+            	((VBox) outputArea.getParent()).getChildren().remove(deleteBox);
+				articleOptions();
+			} catch (Exception e) {
+				outputArea.appendText("Error going back\n");
+				e.printStackTrace();
+			}  
+        });
+    }
+
+    // Handles operation (4) from user-- saves existing article objects in the database:
+    private void backupArticles() throws Exception {
+        
+    	outputArea.appendText("Backup articles\n");
+        
+    	// Create input fields for file name
+    	Label file = new Label("Enter backup filename: \n");
+        TextField fileInput = new TextField();
+        // Buttons
+    	Button backupButton = new Button("Backup articles to file");
+    	Button backButton = new Button("Back");
+    	
+    	// Create a VBox for input fields
+        VBox backupBox = new VBox(10, file, fileInput, backupButton, backButton);
+        
+        backupBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(backupBox);
+        
+        clearPreviousOptionBox();
+        
+        backupButton.setOnAction(event -> {
+        	try {
+				databaseHelper.backupArticles(fileInput.getText()); // Operation outsourced to DatabaseHelper.java
+				outputArea.appendText("Backed up articles to: " + fileInput.getText() + "\n");
+				((VBox) outputArea.getParent()).getChildren().remove(backupBox);
+				articleOptions();
+			} catch (SQLException e) {
+				outputArea.appendText("Error calling backup articles\n");
+				e.printStackTrace();
+			} catch (IOException e) {
+				outputArea.appendText("Error gettting text\n");
+				e.printStackTrace();
+			} catch (Exception e) {
+				outputArea.appendText("Error going back to article options\n");
+				e.printStackTrace();
+			} 
+        });
+        
+        backButton.setOnAction(event -> {
+        	((VBox) outputArea.getParent()).getChildren().remove(backupBox);
+            try {
+            	((VBox) outputArea.getParent()).getChildren().remove(backupBox);
+				articleOptions();
+			} catch (Exception e) {
+				outputArea.appendText("Error going back\n");
+				e.printStackTrace();
+			}
+        });
+    }
+
+    // Handles operation (5) from user-- loads previously saved article objects from the database:
+    private void restoreArticles() throws Exception {
+    	outputArea.appendText("Restore articles\n");
+        
+    	// Create input fields for file name
+    	Label file = new Label("Enter backup filename: \n");
+        TextField fileInput = new TextField();
+        // Buttons
+    	Button backupButton = new Button("Backup articles from file");
+    	Button backButton = new Button("Back");
+    	
+    	// Create a VBox for input fields
+        VBox restoreBox = new VBox(10, file, fileInput, backupButton, backButton);
+        
+        restoreBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(restoreBox);
+        
+        clearPreviousOptionBox();
+        
+        backupButton.setOnAction(event -> {
+        	try {
+        		String fileName = fileInput.getText();
+        		databaseHelper.restoreArticles(fileName); // Operation outsourced to DatabaseHelper.java
+				outputArea.appendText("Restored articles successfully\n");
+				((VBox) outputArea.getParent()).getChildren().remove(restoreBox);
+				articleOptions();
+			} catch (SQLException e) {
+				outputArea.appendText("Error calling restore articles\n");
+				e.printStackTrace();
+			} catch (IOException e) {
+				outputArea.appendText("Error gettting text\n");
+				e.printStackTrace();
+			} catch (Exception e) {
+				outputArea.appendText("Error going back to article options\n");
+				e.printStackTrace();
+			} 
+        });
+        
+        backButton.setOnAction(event -> {
+        	((VBox) outputArea.getParent()).getChildren().remove(restoreBox);
+            try {
+            	((VBox) outputArea.getParent()).getChildren().remove(restoreBox);
+				articleOptions();
+			} catch (Exception e) {
+				outputArea.appendText("Error going back\n");
+				e.printStackTrace();
+			}
+        });
+    } 
+    
+    
+    
+}

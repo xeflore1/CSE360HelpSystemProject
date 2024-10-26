@@ -1,4 +1,9 @@
 package project;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -46,7 +51,8 @@ class DatabaseHelper {
 
     
 	private void createTables() throws SQLException {
-	    String userTable = "CREATE TABLE IF NOT EXISTS cse360users ("
+	    // table for users
+		String userTable = "CREATE TABLE IF NOT EXISTS cse360users ("
 	            + "id INT AUTO_INCREMENT PRIMARY KEY, "
 	            + "username VARCHAR(255), "
 	            + "password VARBINARY(255), "  // Store password as binary data for better security
@@ -62,6 +68,18 @@ class DatabaseHelper {
 	            + "topicProficiencies TEXT"  // Store topic proficiencies as serialized data or JSON
 	            + ")";
 	    statement.execute(userTable);
+	    // table for articles
+	    String articleTable = "CREATE TABLE IF NOT EXISTS help_articles ("
+                + "id INT AUTO_INCREMENT PRIMARY KEY, "
+	    		+ "level VARCHAR(255), "
+                + "groupId VARCHAR(255), "
+                + "title VARCHAR(255), "
+                + "authors VARCHAR(255), "
+                + "abstract CLOB, "
+                + "keywords VARCHAR(255), "
+                + "body CLOB, "
+                + "references CLOB)";
+        statement.execute(articleTable);
 	}
 
 	// when the program starts, retrieve all users from database 
@@ -354,7 +372,6 @@ class DatabaseHelper {
 	    return rolesStringBuilder.toString();  // Convert StringBuilder to String
 	}
 
-
 	// method converts comma seperated string back into roles
 	private Set<Role> deserializeRoles(String rolesString) {
 	    Set<Role> roles = new HashSet<>();
@@ -368,7 +385,135 @@ class DatabaseHelper {
 	    return roles;  // Return the populated set of roles
 	}
 
+	// Creates the article and all relevant information based on parameters inputted into StartCSE360.java:
+    public void createArticle(char[] level, char[] group, char[] title, char[] authors, char[] articleAbstract, char[] keywords, char[] body, char[] references) throws SQLException {
+        String insertArticle = "INSERT INTO help_articles (level, groupId, title, authors, abstract, keywords, body, references) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement pstmt = connection.prepareStatement(insertArticle)) {
+        	pstmt.setString(1, new String(level));
+            pstmt.setString(2, new String(group));
+        	pstmt.setString(3, new String(title));
+            pstmt.setString(4, new String(authors));
+            pstmt.setString(5, new String(articleAbstract));
+            pstmt.setString(6, new String(keywords));
+            pstmt.setString(7, new String(body));
+            pstmt.setString(8, new String(references));
+            pstmt.executeUpdate();
+        } finally {
+        	clearCharArray(level);
+            clearCharArray(group);
+        	clearCharArray(title);
+            clearCharArray(authors);
+            clearCharArray(articleAbstract);
+            clearCharArray(keywords);
+            clearCharArray(body);
+            clearCharArray(references);
+        }
+    }
+	
+    // method clears charr array
+    private void clearCharArray(char[] array) {
+        Arrays.fill(array, '\u0000');  // Clear char array after use
+    }
+    
+    // method lists articles
+    /*public void listArticles() throws SQLException {
+        String query = "SELECT * FROM help_articles";
+        ResultSet rs = statement.executeQuery(query);
+        System.out.println("Articles:");
+        while (rs.next()) {
+        	System.out.println("[" + rs.getInt("id") + "] " + rs.getString("title") + " by " + rs.getString("authors"));
+        }
+    } */
+    public String listArticles() throws SQLException {
+        String query = "SELECT * FROM help_articles";
+        ResultSet rs = statement.executeQuery(query);
+        StringBuilder articlesList = new StringBuilder("Articles:\n");
+        
+        while (rs.next()) {
+            articlesList.append("[").append(rs.getInt("id")).append("] ")
+                        .append(rs.getString("title")).append(" by ")
+                        .append(rs.getString("authors")).append("\n");
+        }
+        
+        return articlesList.toString();
+    }
 
+
+    // Deletes selected article from the database:
+    public void deleteArticle(int articleId) throws SQLException {
+        String deleteArticle = "DELETE FROM help_articles WHERE id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(deleteArticle)) {
+            pstmt.setInt(1, articleId);
+            pstmt.executeUpdate();
+        }
+    }
+    
+ /* Backs up and saves selected article from database:
+    public void backupArticles(String filename) throws SQLException, IOException {
+        String query = "SELECT * FROM help_articles";
+        ResultSet rs = statement.executeQuery(query);
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {
+            while (rs.next()) {
+                writer.write(rs.getInt("id") + "," + rs.getString("level") + rs.getString("groupId") + 
+                		rs.getString("title") + "," + rs.getString("authors") + "," + 
+                		rs.getString("abstract") + "," + rs.getString("keywords") + "," + 
+                		rs.getString("body") + "," + rs.getString("references"));
+                writer.newLine();
+            }
+        }
+    } */
+    
+    public void backupArticles(String filename) throws SQLException, IOException {
+        String query = "SELECT * FROM help_articles";
+        ResultSet rs = statement.executeQuery(query);
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {
+            while (rs.next()) {
+                // Create the line to be written
+                String line = rs.getInt("id") + "," 
+                		    + rs.getString("level") + ","
+                			+ rs.getString("groupId") + ","
+                            + rs.getString("title") + "," 
+                            + rs.getString("authors") + ","
+                            + rs.getString("abstract") + "," 
+                            + rs.getString("keywords") + "," 
+                            + rs.getString("body") + "," 
+                            + rs.getString("references");
+
+                // Debug print to check the format of the line
+                System.out.println("Writing line to backup: " + line);
+
+                // Write the line to the file
+                writer.write(line);
+                writer.newLine();
+            }
+        }
+    }
+
+
+    // Loads selected article previously saved to the database:
+    public void restoreArticles(String filename) throws SQLException, IOException {
+        clearArticles();
+        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] fields = line.split(",");
+                if (fields.length < 9) {
+                    System.err.println("Skipping line due to insufficient fields: " + line);
+                    continue;
+                }
+                createArticle(fields[1].toCharArray(), fields[2].toCharArray(), fields[3].toCharArray(),
+                        fields[4].toCharArray(), fields[5].toCharArray(), fields[6].toCharArray(), 
+                        fields[7].toCharArray(), fields[8].toCharArray());
+            }
+        }
+    }
+    
+ // Memory freeing classes:
+    private void clearArticles() throws SQLException {
+        String deleteAll = "DELETE FROM help_articles";
+        statement.executeUpdate(deleteAll);
+    }
+    
 	public void closeConnection() {
 		try{ 
 			if(statement!=null) statement.close(); 

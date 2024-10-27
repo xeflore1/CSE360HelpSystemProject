@@ -258,7 +258,6 @@ class DatabaseHelper {
 	    }
 	}
 
-
 	public boolean login(String email, String password, String role) throws Exception {
 		// encrypt the password using email as thats whats stored in the database
 		String encryptedPassword = Base64.getEncoder().encodeToString(
@@ -415,15 +414,7 @@ class DatabaseHelper {
         Arrays.fill(array, '\u0000');  // Clear char array after use
     }
     
-    // method lists articles
-    /*public void listArticles() throws SQLException {
-        String query = "SELECT * FROM help_articles";
-        ResultSet rs = statement.executeQuery(query);
-        System.out.println("Articles:");
-        while (rs.next()) {
-        	System.out.println("[" + rs.getInt("id") + "] " + rs.getString("title") + " by " + rs.getString("authors"));
-        }
-    } */
+    // Method to list all articles
     public String listArticles() throws SQLException {
         String query = "SELECT * FROM help_articles";
         ResultSet rs = statement.executeQuery(query);
@@ -438,7 +429,68 @@ class DatabaseHelper {
         return articlesList.toString();
     }
 
+    // Method to list all articles by group
+    public String listArticlesByGroup(String groupId) throws SQLException {
+        // Use LIKE to find articles that contain the specified groupId
+        String query = "SELECT * FROM help_articles WHERE groupId LIKE ?";
+        StringBuilder articlesList = new StringBuilder("Articles in Group [").append(groupId).append("]:\n");
+        
+        // Prepare the wildcard pattern for the LIKE clause
+        String likeGroupId = "%" + groupId + "%"; // For example: "%java%"
 
+        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+            pstmt.setString(1, likeGroupId);  // Set the groupId parameter with wildcard
+            
+            ResultSet rs = pstmt.executeQuery();
+            boolean hasArticles = false;
+            
+            while (rs.next()) {
+                hasArticles = true;  // Set to true if at least one article is found
+                articlesList.append("[").append(rs.getInt("id")).append("] ")
+                            .append(rs.getString("title")).append(" by ")
+                            .append(rs.getString("authors")).append("\n");
+            }
+            
+            if (!hasArticles) {
+                articlesList.append("No articles found in this group.\n");
+            }
+        } catch (SQLException e) {
+            System.out.println("Error listing articles by group: " + e.getMessage());
+            throw e;  // Re-throw the exception to handle it elsewhere if needed
+        }
+        
+        return articlesList.toString();
+    }
+
+
+    
+    // Deletes selected article from the database:
+    public void updateArticle(int id, char[] level, char[] groupId, char[] title, char[] authors, char[] articleAbstract, char[] keywords, char[] body, char[] references) throws SQLException {
+        String updateArticleSQL = "UPDATE help_articles SET level = ?, groupId = ?, title = ?, authors = ?, abstract = ?, keywords = ?, body = ?, references = ? WHERE id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(updateArticleSQL)) {
+            pstmt.setString(1, new String(level));
+            pstmt.setString(2, new String(groupId));
+            pstmt.setString(3, new String(title));
+            pstmt.setString(4, new String(authors));
+            pstmt.setString(5, new String(articleAbstract));
+            pstmt.setString(6, new String(keywords));
+            pstmt.setString(7, new String(body));
+            pstmt.setString(8, new String(references));
+            pstmt.setInt(9, id);  // Set the id for the WHERE clause
+            int rowsAffected = pstmt.executeUpdate();
+            
+            if (rowsAffected > 0) {
+                System.out.println("Article with ID " + id + " updated successfully.");
+            } else {
+                System.out.println("No article found with ID " + id + ".");
+            }
+        } catch (SQLException e) {
+            System.out.println("Error updating article with ID " + id + ": " + e.getMessage());
+            throw e;  // Re-throw the exception to handle it elsewhere if needed
+        }
+    }
+
+    
     // Deletes selected article from the database:
     public void deleteArticle(int articleId) throws SQLException {
         String deleteArticle = "DELETE FROM help_articles WHERE id = ?";
@@ -447,21 +499,6 @@ class DatabaseHelper {
             pstmt.executeUpdate();
         }
     }
-    
- /* Backs up and saves selected article from database:
-    public void backupArticles(String filename) throws SQLException, IOException {
-        String query = "SELECT * FROM help_articles";
-        ResultSet rs = statement.executeQuery(query);
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {
-            while (rs.next()) {
-                writer.write(rs.getInt("id") + "," + rs.getString("level") + rs.getString("groupId") + 
-                		rs.getString("title") + "," + rs.getString("authors") + "," + 
-                		rs.getString("abstract") + "," + rs.getString("keywords") + "," + 
-                		rs.getString("body") + "," + rs.getString("references"));
-                writer.newLine();
-            }
-        }
-    } */
     
     public void backupArticles(String filename) throws SQLException, IOException {
         String query = "SELECT * FROM help_articles";
@@ -488,11 +525,77 @@ class DatabaseHelper {
             }
         }
     }
+    
+    public void backupArticlesByGroup(String filename, String groupId) throws SQLException, IOException {
+        // Use LIKE to find articles that contain the specified groupId
+        String query = "SELECT * FROM help_articles WHERE groupId LIKE ?";
+        String likeGroupId = "%" + groupId + "%"; // Pattern for matching group
+
+        try (PreparedStatement pstmt = connection.prepareStatement(query);
+             BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {
+            
+            pstmt.setString(1, likeGroupId);  // Set the groupId parameter with wildcard
+            ResultSet rs = pstmt.executeQuery();
+
+            boolean hasArticles = false;
+
+            while (rs.next()) {
+                hasArticles = true;
+
+                // Create the line to be written
+                String line = rs.getInt("id") + "," 
+                              + rs.getString("level") + ","
+                              + rs.getString("groupId") + ","
+                              + rs.getString("title") + "," 
+                              + rs.getString("authors") + ","
+                              + rs.getString("abstract") + "," 
+                              + rs.getString("keywords") + "," 
+                              + rs.getString("body") + "," 
+                              + rs.getString("references");
+
+                // Debug print to check the format of the line
+                System.out.println("Writing line to backup: " + line);
+
+                // Write the line to the file
+                writer.write(line);
+                writer.newLine();
+            }
+
+            // If no articles were found in the specified group, add a message to the file
+            if (!hasArticles) {
+                System.out.println("No articles found for group: " + groupId);
+                writer.write("No articles found for group: " + groupId);
+                writer.newLine();
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Error backing up articles by group: " + e.getMessage());
+            throw e;
+        }
+    }
+
 
 
     // Loads selected article previously saved to the database:
     public void restoreArticles(String filename) throws SQLException, IOException {
         clearArticles();
+        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] fields = line.split(",");
+                if (fields.length < 9) {
+                    System.err.println("Skipping line due to insufficient fields: " + line);
+                    continue;
+                }
+                createArticle(fields[1].toCharArray(), fields[2].toCharArray(), fields[3].toCharArray(),
+                        fields[4].toCharArray(), fields[5].toCharArray(), fields[6].toCharArray(), 
+                        fields[7].toCharArray(), fields[8].toCharArray());
+            }
+        }
+    }
+    
+    // Loads selected article previously saved to the database:
+    public void mergeArticles(String filename) throws SQLException, IOException {
         try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
             String line;
             while ((line = reader.readLine()) != null) {

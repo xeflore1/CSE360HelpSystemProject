@@ -269,17 +269,19 @@ public class Main extends Application {
 
             outputArea.appendText("User details saved.\n");
             
-            // admin should be taken to the login screen
-            if (currentUser instanceof Admin) {
+            // Take user to the login screen
+            ((VBox) outputArea.getParent()).getChildren().remove(userInfoBox);
+        	showSignInOrCreateAccount();
+            /*if (currentUser instanceof Admin) {
             	((VBox) outputArea.getParent()).getChildren().remove(userInfoBox);
             	showSignInOrCreateAccount();
             }
             else {
             // Clear the user info box
             ((VBox) outputArea.getParent()).getChildren().remove(userInfoBox);
-            Set<Role> currRole = currentUser.getRoles();
-            showUserOptions(Role.STUDENT);  // Show the options for the student user
-            }
+            //Set<Role> currRole = currentUser.getRoles();
+            showUserOptions(currRole);  // Show the options for the student user
+            } */
         });
 
         // Cancel button action
@@ -303,9 +305,10 @@ public class Main extends Application {
         // Clear the optionBox before adding new options
         optionBox.getChildren().clear();
 
-        // Create buttons for each user option
+        // Create buttons that multiple users have
         Button signOutButton = new Button("Sign out");
         Button quitButton = new Button("Quit");
+        Button aritcleButton = new Button("Article settings");
 
         // Add admin options only if the current user is an admin
         if (currRole == Role.ADMIN) {
@@ -314,7 +317,6 @@ public class Main extends Application {
             Button inviteUserButton = new Button("Invite a user");
             Button addOrRemoveRole = new Button("Add or remove a users role");
             Button resetUserButton = new Button("Reset a user's password");
-            Button aritcleButton = new Button("Article settings");
             
             // Set button actions
             printUsersButton.setOnAction(e -> listUsers());
@@ -342,7 +344,28 @@ public class Main extends Application {
                 aritcleButton,
                 quitButton
             );
-        } else {
+        } 
+        else if (currRole == Role.INSTRUCTOR) {  	
+        	optionBox.getChildren().addAll(
+                    new Label("Select an option:"),
+                    aritcleButton,
+                    signOutButton,
+                    quitButton
+            );
+        	
+        	aritcleButton.setOnAction(e -> {
+				try {
+					articleOptions();
+				} catch (Exception e1) {
+					outputArea.appendText("Error going to article options:\n");
+					e1.printStackTrace();
+				}
+			}); 
+        	
+        }
+        
+        
+        else  if (currRole == Role.STUDENT){
             // For regular users and instructors, only show sign out and quit options
             optionBox.getChildren().addAll(
                 new Label("Select an option:"),
@@ -358,23 +381,6 @@ public class Main extends Application {
         	// Save the updated user list to the database
             try {
 				databaseHelper.saveUserListToDatabase(userList);
-				// Debug print to verify users were added
-			    /*try {
-			    	System.out.println("Users in list:");
-			        for (User user : userList) {
-			            System.out.println("username: " + user.getUsername());
-			            System.out.println("first name: " + user.getFirstName());
-			        }
-			        List<User> savedUsers = databaseHelper.loadUsersFromDatabase();
-			        System.out.println("Users in database after saving:");
-			        for (User user : savedUsers) {
-			            System.out.println("username: " + user.getUsername());
-			            System.out.println("first name: " + user.getFirstName());
-			        }
-			    } catch (SQLException e1) {
-			        System.err.println("Error retrieving users from database: " + e1.getMessage());
-			    } */
-				
 			} catch (Exception e1) {
 				outputArea.appendText("Error saving list to database\n");
 				e1.printStackTrace();
@@ -523,11 +529,13 @@ public class Main extends Application {
         	}
         	// if instructor was selected
         	else if (selectedRadioButton != null && selectedRadioButton.getText().equals("INSTRUCTOR")) {
-        	    showUserOptions(Role.INSTRUCTOR);
+        		currRole = Role.INSTRUCTOR;
+        	    showUserOptions(currRole);
         	}
         	// if student was selected
         	else if (selectedRadioButton != null && selectedRadioButton.getText().equals("STUDENT")) {
-        	    showUserOptions(Role.STUDENT);
+        		currRole = Role.STUDENT;
+        	    showUserOptions(currRole);
         	}	 
             else {
                 outputArea.appendText("Please select a role.\n");
@@ -734,7 +742,7 @@ public class Main extends Application {
             collectUserInfo();  // Pass the newUser object to collectUserInfo
             userList.add(newUser);
             currentUser = newUser;
-
+           
             // Notify user of the roles created
             outputArea.appendText("Account was successfully invited.\n");
 
@@ -1203,8 +1211,10 @@ public class Main extends Application {
         
         // All choices
         Button listArticles = new Button("List articles");
-        Button createArticles = new Button("Create articles");
-        Button deleteArticles = new Button("Delete articles");
+        Button listArticlesByGroup = new Button("List articles by group");
+        Button createArticles = new Button("Create article");
+        Button updateArticle = new Button("Update article");
+        Button deleteArticles = new Button("Delete article");
         Button backupArticles = new Button("Backup articles");
         Button restoreArticles = new Button("Restore articles");
         Button back = new Button("Back");
@@ -1219,6 +1229,14 @@ public class Main extends Application {
 				e1.printStackTrace();
 			}
 		});
+        listArticlesByGroup.setOnAction(e -> {
+        	try {
+				listByGroup();
+			} catch (Exception e1) {
+				outputArea.appendText("error calling list articles by group\n");
+				e1.printStackTrace();
+			}
+        });
         createArticles.setOnAction(e -> {
 			try {
 				createArticle();
@@ -1227,6 +1245,14 @@ public class Main extends Application {
 				e1.printStackTrace();
 			}
 		});
+        updateArticle.setOnAction(e -> {
+        	try {
+				updateArticle();
+			} catch (Exception e1) {
+				outputArea.appendText("error trying to call update article");
+				e1.printStackTrace();
+			}
+        });
         deleteArticles.setOnAction(e -> {
 			try {
 				deleteArticle();
@@ -1259,7 +1285,9 @@ public class Main extends Application {
         optionBox.getChildren().addAll(
             new Label("Select an option:"),
             listArticles,
+            listArticlesByGroup,
             createArticles,
+            updateArticle,
             deleteArticles,
             backupArticles,
             restoreArticles,
@@ -1270,6 +1298,7 @@ public class Main extends Application {
         ((VBox) outputArea.getParent()).getChildren().add(optionBox);
     }
     
+    // Method used to create an article
     private void createArticle() throws Exception {
     	
     	outputArea.appendText("Enter details to create a new account.\n");
@@ -1277,7 +1306,7 @@ public class Main extends Application {
         // Create input fields for username and password
     	Label level = new Label("Enter level:");
         TextField levelInput = new TextField();
-    	Label group = new Label("Enter group:");
+    	Label group = new Label("Enter group (comma-seperated if multiple):");
         TextField groupInput = new TextField();
     	Label title = new Label("Enter title:");
         TextField titleInput = new TextField();
@@ -1343,7 +1372,136 @@ public class Main extends Application {
         });
     }
     
-    // Handles operation (3) from user-- deletes existing article objects from the database:
+    // Method to list articles by group
+    private void listByGroup() throws Exception {
+            
+        // Create input fields for sequence number
+    	Label group = new Label("Enter group:");
+        TextField groupInput = new TextField();
+        // Buttons
+    	Button listButton = new Button("List articles");
+    	Button backButton = new Button("Back");
+    	
+    	// Create a VBox for input fields
+        VBox listBox = new VBox(10, group, groupInput, listButton, backButton);
+        
+        listBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(listBox);
+        
+        clearPreviousOptionBox();
+        
+        // When delete is pressed
+        listButton.setOnAction(event -> {
+        	// get num input
+        	String groupStr = groupInput.getText();
+        	try {
+        		// call delete method
+				String list = databaseHelper.listArticlesByGroup(groupStr);
+				outputArea.appendText(list);
+				((VBox) outputArea.getParent()).getChildren().remove(listBox);
+				articleOptions();
+			} catch (SQLException e) {
+				outputArea.appendText("error when calling list article\n");
+				e.printStackTrace();
+			} catch (Exception e) {
+				outputArea.appendText("error going back to article options\n");
+				e.printStackTrace();
+			}
+        });
+        
+        // when back is pressed
+        backButton.setOnAction(event -> {
+        	((VBox) outputArea.getParent()).getChildren().remove(listBox);
+            try {
+            	((VBox) outputArea.getParent()).getChildren().remove(listBox);
+				articleOptions();
+			} catch (Exception e) {
+				outputArea.appendText("Error going back\n");
+				e.printStackTrace();
+			}  
+        });
+    }
+    // Method to update an article
+    private void updateArticle() throws Exception {
+    	
+    	outputArea.appendText("Update an article\n");
+
+        // Create input fields for sequence number
+    	Label seqNum = new Label("Enter article sequence number to update:");
+        TextField seqNumInput = new TextField();
+        Label level = new Label("Enter level:");
+        TextField levelInput = new TextField();
+    	Label group = new Label("Enter group:");
+        TextField groupInput = new TextField();
+    	Label title = new Label("Enter title:");
+        TextField titleInput = new TextField();
+        Label authors = new Label("Enter authors:");
+        TextField authorsInput = new TextField();
+        Label articleAbstract = new Label("Enter article abstract:");
+        TextField abstractInput = new TextField();
+        Label keywords = new Label("Enter keywords (comma-seperated):");
+        TextField keywordsInput = new TextField();
+        Label body = new Label("Enter body:");
+        TextField bodyInput = new TextField();
+        Label references = new Label("Enter references:");
+        TextField referencesInput = new TextField();
+        // Buttons
+    	Button updateButton = new Button("Update article");
+    	Button backButton = new Button("Back");
+    	
+    	// Create a VBox for input fields
+        VBox updateBox = new VBox(10, seqNum, seqNumInput, level, levelInput, group, 
+        		groupInput, title, titleInput, authors, authorsInput, articleAbstract, 
+        		abstractInput,keywords, keywordsInput, body, bodyInput, references, 
+        		referencesInput, updateButton, backButton);
+        
+        updateBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(updateBox);
+        
+        clearPreviousOptionBox();
+        
+        // When delete is pressed
+        updateButton.setOnAction(event -> {
+        	// get all inputs
+        	int num = Integer.parseInt(seqNumInput.getText());
+        	char[] levelChar = levelInput.getText().toCharArray();
+	        char[] groupChar = groupInput.getText().toCharArray();
+	        char[] titleChar = titleInput.getText().toCharArray();
+	        char[] authorsChar = authorsInput.getText().toCharArray();
+	        char[] articleAbstractChar = abstractInput.getText().toCharArray();
+	        char[] keywordsChar = keywordsInput.getText().toCharArray();
+	        char[] bodyChar = bodyInput.getText().toCharArray();
+	        char[] referencesChar = referencesInput.getText().toCharArray();
+        	try {
+        		// call delete method
+				databaseHelper.updateArticle(num, levelChar, groupChar, titleChar,
+						authorsChar, articleAbstractChar, keywordsChar, bodyChar, referencesChar);
+				outputArea.appendText("Article updated successfully\n");
+				((VBox) outputArea.getParent()).getChildren().remove(updateBox);
+				articleOptions();
+			} catch (SQLException e) {
+				outputArea.appendText("error when calling update article\n");
+				e.printStackTrace();
+			} catch (Exception e) {
+				outputArea.appendText("error going back to article options\n");
+				e.printStackTrace();
+			}
+        });
+        
+        // when back is pressed
+        backButton.setOnAction(event -> {
+        	((VBox) outputArea.getParent()).getChildren().remove(updateBox);
+            try {
+            	((VBox) outputArea.getParent()).getChildren().remove(updateBox);
+				articleOptions(); 
+			} catch (Exception e) {
+				outputArea.appendText("Error going back\n");
+				e.printStackTrace();
+			}  
+        });
+    }
+    
+    // Method deletes existing article objects from the database:
     private void deleteArticle() throws Exception {
         
     	outputArea.appendText("Delete an article\n");
@@ -1395,7 +1553,7 @@ public class Main extends Application {
         });
     }
 
-    // Handles operation (4) from user-- saves existing article objects in the database:
+    // Method saves existing article objects in the database:
     private void backupArticles() throws Exception {
         
     	outputArea.appendText("Backup articles\n");
@@ -1403,12 +1561,14 @@ public class Main extends Application {
     	// Create input fields for file name
     	Label file = new Label("Enter backup filename: \n");
         TextField fileInput = new TextField();
+        Label group = new Label("Enter group name (optional): \n");
+        TextField groupInput = new TextField();
         // Buttons
     	Button backupButton = new Button("Backup articles to file");
     	Button backButton = new Button("Back");
     	
     	// Create a VBox for input fields
-        VBox backupBox = new VBox(10, file, fileInput, backupButton, backButton);
+        VBox backupBox = new VBox(10, file, fileInput, group, groupInput, backupButton, backButton);
         
         backupBox.setAlignment(Pos.CENTER);
         ((VBox) outputArea.getParent()).getChildren().add(backupBox);
@@ -1416,21 +1576,42 @@ public class Main extends Application {
         clearPreviousOptionBox();
         
         backupButton.setOnAction(event -> {
-        	try {
-				databaseHelper.backupArticles(fileInput.getText()); // Operation outsourced to DatabaseHelper.java
-				outputArea.appendText("Backed up articles to: " + fileInput.getText() + "\n");
-				((VBox) outputArea.getParent()).getChildren().remove(backupBox);
-				articleOptions();
-			} catch (SQLException e) {
-				outputArea.appendText("Error calling backup articles\n");
-				e.printStackTrace();
-			} catch (IOException e) {
-				outputArea.appendText("Error gettting text\n");
-				e.printStackTrace();
-			} catch (Exception e) {
-				outputArea.appendText("Error going back to article options\n");
-				e.printStackTrace();
-			} 
+        	String groupStr = groupInput.getText();
+        	// If not group was specified
+        	if (groupStr.isEmpty()) {
+	        	try {
+					databaseHelper.backupArticles(fileInput.getText()); // Operation outsourced to DatabaseHelper.java
+					outputArea.appendText("Backed up articles to: " + fileInput.getText() + "\n");
+					((VBox) outputArea.getParent()).getChildren().remove(backupBox);
+					articleOptions();
+				} catch (SQLException e) {
+					outputArea.appendText("Error calling backup articles\n");
+					e.printStackTrace();
+				} catch (IOException e) {
+					outputArea.appendText("Error gettting text\n");
+					e.printStackTrace();
+				} catch (Exception e) {
+					outputArea.appendText("Error going back to article options\n");
+					e.printStackTrace();
+				} 
+        	}
+        	else {
+        		try {
+					databaseHelper.backupArticlesByGroup(fileInput.getText(), groupStr); // Operation outsourced to DatabaseHelper.java
+					outputArea.appendText("Backed up articles of group: " + groupStr + " to: " + fileInput.getText() + "\n");
+					((VBox) outputArea.getParent()).getChildren().remove(backupBox);
+					articleOptions();
+				} catch (SQLException e) {
+					outputArea.appendText("Error calling backup articles\n");
+					e.printStackTrace();
+				} catch (IOException e) {
+					outputArea.appendText("Error gettting text\n");
+					e.printStackTrace();
+				} catch (Exception e) {
+					outputArea.appendText("Error going back to article options\n");
+					e.printStackTrace();
+				} 
+        	}
         });
         
         backButton.setOnAction(event -> {
@@ -1445,7 +1626,7 @@ public class Main extends Application {
         });
     }
 
-    // Handles operation (5) from user-- loads previously saved article objects from the database:
+    // Method loads previously saved article objects from the database:
     private void restoreArticles() throws Exception {
     	outputArea.appendText("Restore articles\n");
         
@@ -1453,11 +1634,12 @@ public class Main extends Application {
     	Label file = new Label("Enter backup filename: \n");
         TextField fileInput = new TextField();
         // Buttons
-    	Button backupButton = new Button("Backup articles from file");
+    	Button backupButton = new Button("Remove existing articles");
+    	Button mergeButton = new Button("Merge articles");
     	Button backButton = new Button("Back");
     	
     	// Create a VBox for input fields
-        VBox restoreBox = new VBox(10, file, fileInput, backupButton, backButton);
+        VBox restoreBox = new VBox(10, file, fileInput, backupButton, mergeButton, backButton);
         
         restoreBox.setAlignment(Pos.CENTER);
         ((VBox) outputArea.getParent()).getChildren().add(restoreBox);
@@ -1469,6 +1651,25 @@ public class Main extends Application {
         		String fileName = fileInput.getText();
         		databaseHelper.restoreArticles(fileName); // Operation outsourced to DatabaseHelper.java
 				outputArea.appendText("Restored articles successfully\n");
+				((VBox) outputArea.getParent()).getChildren().remove(restoreBox);
+				articleOptions();
+			} catch (SQLException e) {
+				outputArea.appendText("Error calling restore articles\n");
+				e.printStackTrace();
+			} catch (IOException e) {
+				outputArea.appendText("Error gettting text\n");
+				e.printStackTrace();
+			} catch (Exception e) {
+				outputArea.appendText("Error going back to article options\n");
+				e.printStackTrace();
+			} 
+        });
+        
+        mergeButton.setOnAction(event -> {
+        	try {
+        		String fileName = fileInput.getText();
+        		databaseHelper.mergeArticles(fileName); // Operation outsourced to DatabaseHelper.java
+				outputArea.appendText("Merged articles successfully\n");
 				((VBox) outputArea.getParent()).getChildren().remove(restoreBox);
 				articleOptions();
 			} catch (SQLException e) {

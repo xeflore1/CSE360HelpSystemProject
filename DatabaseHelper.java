@@ -17,6 +17,13 @@ import org.bouncycastle.util.Arrays;
 import Encryption.EncryptionHelper;
 import Encryption.EncryptionUtils;
 
+/*******
+ * <p> DatabaseHelper class </p>
+ * 
+ * <p> Description: A class created for the database functionalality for the CSE360 Help System </p>
+ * 
+ * @author Hassan Khan, Colby Taylor, Xavier Flores, Shashwat Balaji, Avinash Poguluri, Abil Damirbek uulu
+*/
 class DatabaseHelper {
 
 	// JDBC driver name and database URL 

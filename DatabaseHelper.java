@@ -38,6 +38,10 @@ class DatabaseHelper {
 		encryptionHelper = new EncryptionHelper();
 	}
 
+	/*********
+     * This is the method used to connect to the database 
+     * Exception handling takes care of any database errors
+     */
 	public void connectToDatabase() throws SQLException {
 		try {
 			Class.forName(JDBC_DRIVER); // Load the JDBC driver
@@ -50,7 +54,10 @@ class DatabaseHelper {
 		}
 	}
 
-    
+	/*********
+     * This is the method used to create tables in the database 
+     * Exception handling takes care of any database errors
+     */
 	private void createTables() throws SQLException {
 	    // table for users
 		String userTable = "CREATE TABLE IF NOT EXISTS cse360users ("
@@ -84,7 +91,12 @@ class DatabaseHelper {
         statement.execute(articleTable);
 	}
 
-	// when the program starts, retrieve all users from database 
+	/*********
+     * This is the method used when the program starts, to retrieve all users from database 
+     * Exception handling takes care of any database errors
+     * 
+     * @return user list
+     */
 	public List<User> loadUsersFromDatabase() throws SQLException {
 	    List<User> userList = new ArrayList<>();
 	    String selectAllUsers = "SELECT username, password, roles, email, firstName, middleName, lastName, preferredName, isOneTimePassword, oneTimePassword, otpExpiry FROM cse360users";
@@ -121,6 +133,12 @@ class DatabaseHelper {
 	    return userList;
 	}
 
+	/*********
+     * This is the method used to save the userlist to database 
+     * Exception handling takes care of any database errors
+     * 
+     * @param userList    		list of all users
+     */
 	public void saveUserListToDatabase(List<User> userList) throws SQLException {
 	    String insertUser = "INSERT INTO cse360users (username, password, roles, email, firstName, middleName, lastName, preferredName, isOneTimePassword, oneTimePassword, otpExpiry) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 	    String updateUser = "UPDATE cse360users SET password = ?, roles = ?, email = ?, firstName = ?, middleName = ?, lastName = ?, preferredName = ?, isOneTimePassword = ?, oneTimePassword = ?, otpExpiry = ? WHERE username = ?";
@@ -166,7 +184,12 @@ class DatabaseHelper {
 	    }
 	}
 
-	// Check if the database is empty
+	/*********
+     * This is the method used to check if the database is empty
+     * Exception handling takes care of any database errors
+     * 
+     * @return boolean
+     */
 	public boolean isDatabaseEmpty() throws SQLException {
 		String query = "SELECT COUNT(*) AS count FROM cse360users";
 		ResultSet resultSet = statement.executeQuery(query);
@@ -176,6 +199,14 @@ class DatabaseHelper {
 		return true;
 	}
 
+	/*********
+     * This is the method used to create the initial register
+     * Exception handling takes care of any database errors
+     * 
+     * @param username    		username of user
+     * @param password    		password of user
+     * @param role    			role of user
+     */
 	public void initialRegister(String username, char[] password, Role role) throws Exception {
 	    // Convert char[] password to byte[] for encryption
 	    byte[] passwordBytes = new String(password).getBytes();
@@ -198,7 +229,17 @@ class DatabaseHelper {
 	    //Arrays.fill(password, '\0');
 	}
 
-	
+	/*********
+     * This is the method used to create the final register
+     * Exception handling takes care of any database errors
+     * 
+     * @param username    		username of user
+     * @param firstName			first name of user
+     * @param middleName		middle name of user
+     * @param lastName			last name of user
+     * @param preferredtName	preferred name of user
+     * @param email    			email of user
+     */
 	public void finalRegister(String username, String firstName, String middleName, String lastName, String preferredName, String email) throws Exception {
 	    // SQL query to update the user's details
 	    String updateUserDetails = "UPDATE cse360users SET firstName = ?, middleName = ?, lastName = ?, preferredName = ?, email = ? WHERE username = ?";
@@ -225,6 +266,15 @@ class DatabaseHelper {
 	    }
 	}
 
+	/*********
+     * This is the method used to log into database
+     * Exception handling takes care of any database errors
+     * 
+     * @param username    		username of user
+     * @param password    		password of user
+     * @param role    			role of user
+     * @return boolean
+     */
 	public boolean login(String email, String password, String role) throws Exception {
 		// encrypt the password using email as thats whats stored in the database
 		String encryptedPassword = Base64.getEncoder().encodeToString(
@@ -242,6 +292,12 @@ class DatabaseHelper {
 		}
 	}
 	
+	/*********
+     * This is the method used to check if user exists
+     * 
+     * @param email    			email of user
+     * @return 	boolean
+     */
 	public boolean doesUserExist(String email) {
 	    String query = "SELECT COUNT(*) FROM cse360users WHERE email = ?";
 	    try (PreparedStatement pstmt = connection.prepareStatement(query)) {
@@ -259,6 +315,10 @@ class DatabaseHelper {
 	    return false; // If an error occurs, assume user doesn't exist
 	}
 
+	/*********
+     * This is the method used to display users by admin
+     * Exception handling takes care of any database errors
+     */
 	public void displayUsersByAdmin() throws Exception{
 		String sql = "SELECT * FROM cse360users"; 
 		Statement stmt = connection.createStatement();
@@ -291,6 +351,10 @@ class DatabaseHelper {
 		} 
 	}
 	
+	/*********
+     * This is the method used to display users by user
+     * Exception handling takes care of any database errors
+     */
 	public void displayUsersByUser() throws Exception{
 		String sql = "SELECT * FROM cse360users"; 
 		Statement stmt = connection.createStatement();
@@ -322,7 +386,12 @@ class DatabaseHelper {
 		} 
 	}
 
-	// method converts roles to a comma seperated string
+	/*********
+     * This is the method used serialize roles
+     * 
+     * @param roles 			set of roles
+     * @return role string 
+     */
 	private String serializeRoles(Set<Role> roles) {
 	    StringBuilder rolesStringBuilder = new StringBuilder();
 	    
@@ -338,7 +407,12 @@ class DatabaseHelper {
 	    return rolesStringBuilder.toString();  // Convert StringBuilder to String
 	}
 
-	// method converts comma seperated string back into roles
+	/*********
+     * This is the method used deserialize roles
+     * 
+     * @param rolestring 			string of roles
+     * @return set of roles
+     */
 	private Set<Role> deserializeRoles(String rolesString) {
 	    Set<Role> roles = new HashSet<>();
 	    String[] roleNames = rolesString.split(",");  // Split the string into an array
@@ -351,7 +425,19 @@ class DatabaseHelper {
 	    return roles;  // Return the populated set of roles
 	}
 
-    
+	/*********
+     * This is the method used to create the article
+     * Exception handling takes care of any database errors
+     * 
+     * @param level    			(beginner, intermediate, advanced, expert)
+     * @param groupId			identifiers used for groups of related articles
+     * @param title				title of article
+     * @param authors			authors of article
+     * @param articleAbstract	short description about article
+     * @param keywords			words used to process searches
+     * @param body				body of help article
+     * @param references		reference links or similar materials
+     */
     public void createArticle(char[] level, char[] group, char[] title, char[] authors, char[] articleAbstract,
             char[] keywords, char[] body, char[] references) throws SQLException {
 		// create a long id for the article given its parameters
@@ -393,12 +479,19 @@ class DatabaseHelper {
 
     
 	
-    // method clears charr array
+    /*********
+     * This is the method used to clear the char array
+     */
     private void clearCharArray(char[] array) {
         Arrays.fill(array, '\u0000');  // Clear char array after use
     }
     
-    // Method to list all articles
+    /*********
+     * This is the method used to list the articles
+     * Exception handling takes care of any database errors
+     * 
+     * @return articleList 			string of list
+     */
     public String listArticles() throws SQLException {
         String query = "SELECT * FROM help_articles";
         ResultSet rs = statement.executeQuery(query);
@@ -415,7 +508,13 @@ class DatabaseHelper {
         return articlesList.toString();
     }
 
-    // Method to list all articles by group
+    /*********
+     * This is the method used to list the articles by group
+     * Exception handling takes care of any database errors
+     * 
+     * @param groupId 			string of groupId
+     * @return articleList 		string of article list
+     */
     public String listArticlesByGroup(String groupId) throws SQLException {
         // Use LIKE to find articles that contain the specified groupId
         String query = "SELECT * FROM help_articles WHERE groupId LIKE ?";
@@ -448,7 +547,19 @@ class DatabaseHelper {
         return articlesList.toString();
     }
 
- // Method to update an article given its ID
+    /*********
+     * This is the method used to update the article
+     * Exception handling takes care of any database errors
+     * 
+     * @param level    			(beginner, intermediate, advanced, expert)
+     * @param groupId			identifiers used for groups of related articles
+     * @param title				title of article
+     * @param authors			authors of article
+     * @param articleAbstract	short description about article
+     * @param keywords			words used to process searches
+     * @param body				body of help article
+     * @param references		reference links or similar materials
+     */
     public void updateArticle(long id, char[] level, char[] groupId, char[] title, char[] authors, char[] articleAbstract, char[] keywords, char[] body, char[] references) throws SQLException {
         // Generate a new unique ID based on the updated fields
         long newUniqueId = ArticleIdHelper.generateArticleId(level, groupId, title, authors, articleAbstract, keywords, body, references);
@@ -490,7 +601,12 @@ class DatabaseHelper {
     }
 
     
-    // Deletes selected article from the database:
+    /*********
+     * This is the method used to delete article from database
+     * Exception handling takes care of any database errors
+     * 
+     * @param articleId  		list of all users
+     */
     public void deleteArticle(int articleId) throws SQLException {
         String deleteArticle = "DELETE FROM help_articles WHERE id = ?";
         try (PreparedStatement pstmt = connection.prepareStatement(deleteArticle)) {
@@ -499,6 +615,12 @@ class DatabaseHelper {
         }
     }
     
+    /*********
+     * This is the method used to backup articles
+     * Exception handling takes care of any database errors
+     * 
+     * @param filename 		 filename used to back up
+     */
     public void backupArticles(String filename) throws SQLException, IOException {
         String query = "SELECT * FROM help_articles";
         ResultSet rs = statement.executeQuery(query);
@@ -524,6 +646,13 @@ class DatabaseHelper {
         }
     }
     
+    /*********
+     * This is the method used to backup articles
+     * Exception handling takes care of any database errors
+     * 
+     * @param filename 		 	filename used to back up
+     * @param groupId		  	groupId used for grouped articles
+     */
     public void backupArticlesByGroup(String filename, String groupId) throws SQLException, IOException {
         // Use LIKE to find articles that contain the specified groupId
         String query = "SELECT * FROM help_articles WHERE groupId LIKE ?";
@@ -571,7 +700,12 @@ class DatabaseHelper {
         }
     }
     
- // Loads selected article previously saved to the database:
+    /*********
+     * This is the method used to restore articles
+     * Exception handling takes care of any database errors
+     * 
+     * @param filename 		 filename used to restore
+     */
     public void restoreArticles(String filename) throws SQLException, IOException {
         clearArticles();
         try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
@@ -592,8 +726,12 @@ class DatabaseHelper {
     }
 
 
-    
-    // Loads selected article previously saved to the database:
+    /*********
+     * This is the method used to load selected article previously saved to the database
+     * Exception handling takes care of any database errors
+     * 
+     * @param filename 		 filename used to load
+     */
     public void mergeArticles(String filename) throws SQLException, IOException {
         try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
             String line;
@@ -610,7 +748,12 @@ class DatabaseHelper {
         }
     }
     
-    // checks if an article already exists given a long
+    /*********
+     * This is the method used to check if an article already exists given a long
+     * Exception handling takes care of any database errors
+     * 
+     * @param uniqueId 		 long used for unique Id
+     */
     public boolean articleExistsByUniqueId(long uniqueId) throws SQLException {
         String query = "SELECT COUNT(*) FROM help_articles WHERE unique_id = ?";
         boolean exists = false;
@@ -631,7 +774,13 @@ class DatabaseHelper {
         return exists;  // Return true if the article exists, false otherwise
     }
 
-    // method returns a string with the details of an article
+    /*********
+     * This is the method used to get the formatted article
+     * Exception handling takes care of any database errors
+     * 
+     * @param title 		 title of article
+     * @param author 		 author of article
+     */
     public String getFormattedArticle(String title, String author) throws SQLException {
         StringBuilder formattedArticle = new StringBuilder();
         String query = "SELECT * FROM help_articles WHERE title = ? AND authors = ?";
@@ -664,13 +813,21 @@ class DatabaseHelper {
         return formattedArticle.toString(); // Return the formatted article string
     }
 
-    
- // Memory freeing classes:
+    /*********
+     * This is the method used to clear all memory of articles
+     * Exception handling takes care of any database errors
+     * 
+     */
     private void clearArticles() throws SQLException {
         String deleteAll = "DELETE FROM help_articles";
         statement.executeUpdate(deleteAll);
     }
     
+    /*********
+     * This is the method used to close the connection of database
+     * Exception handling takes care of any database errors
+     * 
+     */
 	public void closeConnection() {
 		try{ 
 			if(statement!=null) statement.close(); 

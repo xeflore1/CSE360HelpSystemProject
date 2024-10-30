@@ -20,7 +20,18 @@ public class Admin extends User {
         addRole(Role.ADMIN); // Ensure this user has the Admin role
     }
 
-    // Method to invite a user
+    /*********
+     * This is the method used to invite a user
+     * 
+     * @param username    		username of user
+     * @param password			password of user
+     * @param firstName			first name of user
+     * @param middleName		middle name of user
+     * @param lastName			last name of user
+     * @param preferredName		preferred name of user
+     * @param email				email of user
+     * @param userList			user list of all users
+     */
     public void inviteUser(String username, char[] password, String firstName, String middleName, String lastName, String preferredName, String email, List<User> userList) {
         // check if user exists
     	for (User user : userList) {
@@ -42,7 +53,12 @@ public class Admin extends User {
         System.out.println(" The provided username has been successfully created.");
     }
 
-    // Method to reset a user account
+    /*********
+     * This is the method used to reset a user's account
+     * 
+     * @param user    			particular user
+     * @param newPassword		new password of user
+     */
     public void resetUserAccount(User user, char[] newPassword) {
     	// check if user exists
     	// FIXME implement if user exists function, you can use code from the main.j
@@ -55,7 +71,12 @@ public class Admin extends User {
     	}
     }
 
-    // Method to delete a user account, works
+    /*********
+     * This is the method used to delete a user's account
+     * 
+     * @param username    		username of user
+     * @param userList			list of all users
+     */
     public void deleteUserAccount(String username, List<User> userList) {
         User userToDelete = null;
         // search for user and set it to userToDelete
@@ -76,7 +97,11 @@ public class Admin extends User {
         }
     }
 
-    // Method to list all user accounts
+    /*********
+     * This is the method used to list user accounts
+     * 
+     * @param userList			list of all users
+     */
     public void listUserAccounts(List<User> userList) {
         System.out.println("Listing all users:");
         for (User user : userList) {
@@ -90,7 +115,12 @@ public class Admin extends User {
         }
     }
 
-    // Method to add a role to a user
+    /*********
+     * This is the method used to add a role to user
+     * 
+     * @param user				particular user
+     * @param role				role to add
+     */
     public void addRoleToUser(User user, Role role) {
         if (user.hasRole(role)) {
             System.out.println("User already has the role ");
@@ -101,7 +131,12 @@ public class Admin extends User {
         }
     }
 
-    // Method to remove a role from a user
+    /*********
+     * This is the method used to remove a role from user
+     * 
+     * @param user				particular user
+     * @param role				role to remove
+     */
     public void removeRoleFromUser(User user, Role role) {
         if (!user.hasRole(role)) {
             System.out.println("Username does not have the role");

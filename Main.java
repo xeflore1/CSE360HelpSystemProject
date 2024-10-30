@@ -1200,7 +1200,10 @@ public class Main extends Application {
         });
     }
 
-    // Article setting menu:
+    /*********
+     * This is the method used to display the menu options for article settings
+     * Exception handling takes care of any database errors
+     */
     private void articleOptions() throws Exception {        
         
     	outputArea.appendText("Select an option\n");
@@ -1209,7 +1212,7 @@ public class Main extends Application {
         // Clear the optionBox before adding new options
         optionBox.getChildren().clear();
         
-        // All choices
+        // All choices for article settings
         Button listArticles = new Button("List articles");
         Button listArticlesByGroup = new Button("List articles by group");
         Button viewArticle = new Button("View an article");
@@ -1308,12 +1311,15 @@ public class Main extends Application {
         ((VBox) outputArea.getParent()).getChildren().add(optionBox);
     }
     
-    // Method used to create an article
+    /*********
+     * This is the method used to create an article
+     * Exception handling takes care of any database errors
+     */
     private void createArticle() throws Exception {
     	
     	outputArea.appendText("Enter details to create a new account.\n");
 
-        // Create input fields for username and password
+        // Create input fields for article details
     	Label level = new Label("Enter level:");
         TextField levelInput = new TextField();
     	Label group = new Label("Enter group (comma-seperated if multiple):");
@@ -1345,7 +1351,8 @@ public class Main extends Application {
         ((VBox) outputArea.getParent()).getChildren().add(createBox);
         
         clearPreviousOptionBox();
-        
+
+	// set action for create
         createButton.setOnAction(event -> {
 	        char[] levelChar = levelInput.getText().toCharArray();
 	        char[] groupChar = groupInput.getText().toCharArray();
@@ -1370,7 +1377,8 @@ public class Main extends Application {
 				e.printStackTrace();
 			}
         });
-        
+
+	// set action for back
         backButton.setOnAction(event -> {
             ((VBox) outputArea.getParent()).getChildren().remove(createBox);
             try {
@@ -1382,7 +1390,10 @@ public class Main extends Application {
         });
     }
     
-    // Method to list articles by group
+    /*********
+     * This is the method used to list articles by group.
+     * Exception handling takes care of any database errors
+     */
     private void listByGroup() throws Exception {
             
         // Create input fields for sequence number
@@ -1400,12 +1411,12 @@ public class Main extends Application {
         
         clearPreviousOptionBox();
         
-        // When delete is pressed
+        // When list by group is pressed
         listButton.setOnAction(event -> {
         	// get num input
         	String groupStr = groupInput.getText();
         	try {
-        		// call delete method
+        		// call list by group method
 				String list = databaseHelper.listArticlesByGroup(groupStr);
 				outputArea.appendText(list);
 				((VBox) outputArea.getParent()).getChildren().remove(listBox);
@@ -1432,7 +1443,10 @@ public class Main extends Application {
         });
     }
     
-    // Method to view a specific article
+    /*********
+     * This is the method used to view an article
+     * Exception handling takes care of any database errors
+     */
     private void viewArticle() throws Exception {
             
         // Create input fields for article
@@ -1452,13 +1466,13 @@ public class Main extends Application {
         
         clearPreviousOptionBox();
         
-        // When delete is pressed
+        // When view is pressed
         viewButton.setOnAction(event -> {
         	// get num input
         	String artTitle = titleInput.getText();
         	String artAuthor = authorInput.getText();
         	try {
-        		// call delete method
+        		// call view method
 				String details = databaseHelper.getFormattedArticle(artTitle, artAuthor);
 				outputArea.appendText(details);
 				((VBox) outputArea.getParent()).getChildren().remove(listBox);
@@ -1485,7 +1499,10 @@ public class Main extends Application {
         });
     }
     
-    // Method to update an article
+    /*********
+     * This is the method used to update articles
+     * Exception handling takes care of any database errors
+     */
     private void updateArticle() throws Exception {
     	
     	outputArea.appendText("Update an article\n");
@@ -1524,7 +1541,7 @@ public class Main extends Application {
         
         clearPreviousOptionBox();
         
-        // When delete is pressed
+        // When update is pressed
         updateButton.setOnAction(event -> {
         	// get all inputs
         	int num = Integer.parseInt(seqNumInput.getText());
@@ -1537,7 +1554,7 @@ public class Main extends Application {
 	        char[] bodyChar = bodyInput.getText().toCharArray();
 	        char[] referencesChar = referencesInput.getText().toCharArray();
         	try {
-        		// call delete method
+        		// call update method
 				databaseHelper.updateArticle(num, levelChar, groupChar, titleChar,
 						authorsChar, articleAbstractChar, keywordsChar, bodyChar, referencesChar);
 				outputArea.appendText("Article updated successfully\n");
@@ -1565,7 +1582,10 @@ public class Main extends Application {
         });
     }
     
-    // Method deletes existing article objects from the database:
+    /*********
+     * This is the method used to delete articles from the database
+     * Exception handling takes care of any database errors
+     */
     private void deleteArticle() throws Exception {
         
     	outputArea.appendText("Delete an article\n");
@@ -1617,7 +1637,10 @@ public class Main extends Application {
         });
     }
 
-    // Method saves existing article objects in the database:
+    /*********
+     * This is the method used to back up articles in database
+     * Exception handling takes care of any database errors
+     */
     private void backupArticles() throws Exception {
         
     	outputArea.appendText("Backup articles\n");
@@ -1690,7 +1713,10 @@ public class Main extends Application {
         });
     }
 
-    // Method loads previously saved article objects from the database:
+    /*********
+     * This is the method used to restore articles
+     * Exception handling takes care of any database errors
+     */
     private void restoreArticles() throws Exception {
     	outputArea.appendText("Restore articles\n");
         
@@ -1709,7 +1735,8 @@ public class Main extends Application {
         ((VBox) outputArea.getParent()).getChildren().add(restoreBox);
         
         clearPreviousOptionBox();
-        
+
+	// action button for merge    
         backupButton.setOnAction(event -> {
         	try {
         		String fileName = fileInput.getText();
@@ -1728,7 +1755,8 @@ public class Main extends Application {
 				e.printStackTrace();
 			} 
         });
-        
+
+	// action button for merge
         mergeButton.setOnAction(event -> {
         	try {
         		String fileName = fileInput.getText();
@@ -1747,7 +1775,8 @@ public class Main extends Application {
 				e.printStackTrace();
 			} 
         });
-        
+
+	// action button for back
         backButton.setOnAction(event -> {
         	((VBox) outputArea.getParent()).getChildren().remove(restoreBox);
             try {

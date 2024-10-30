@@ -1212,6 +1212,7 @@ public class Main extends Application {
         // All choices
         Button listArticles = new Button("List articles");
         Button listArticlesByGroup = new Button("List articles by group");
+        Button viewArticle = new Button("View an article");
         Button createArticles = new Button("Create article");
         Button updateArticle = new Button("Update article");
         Button deleteArticles = new Button("Delete article");
@@ -1234,6 +1235,14 @@ public class Main extends Application {
 				listByGroup();
 			} catch (Exception e1) {
 				outputArea.appendText("error calling list articles by group\n");
+				e1.printStackTrace();
+			}
+        });
+        viewArticle.setOnAction(e -> {
+        	try {
+				viewArticle();
+			} catch (Exception e1) {
+				outputArea.appendText("error calling view article");
 				e1.printStackTrace();
 			}
         });
@@ -1286,6 +1295,7 @@ public class Main extends Application {
             new Label("Select an option:"),
             listArticles,
             listArticlesByGroup,
+            viewArticle,
             createArticles,
             updateArticle,
             deleteArticles,
@@ -1421,6 +1431,60 @@ public class Main extends Application {
 			}  
         });
     }
+    
+    // Method to view a specific article
+    private void viewArticle() throws Exception {
+            
+        // Create input fields for article
+    	Label title = new Label("Enter article title:");
+        TextField titleInput = new TextField();
+        Label author = new Label("Enter author:");
+        TextField authorInput = new TextField();
+        // Buttons
+    	Button viewButton = new Button("View article");
+    	Button backButton = new Button("Back");
+    	
+    	// Create a VBox for input fields
+        VBox listBox = new VBox(10, title, titleInput, author, authorInput, viewButton, backButton);
+        
+        listBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(listBox);
+        
+        clearPreviousOptionBox();
+        
+        // When delete is pressed
+        viewButton.setOnAction(event -> {
+        	// get num input
+        	String artTitle = titleInput.getText();
+        	String artAuthor = authorInput.getText();
+        	try {
+        		// call delete method
+				String details = databaseHelper.getFormattedArticle(artTitle, artAuthor);
+				outputArea.appendText(details);
+				((VBox) outputArea.getParent()).getChildren().remove(listBox);
+				articleOptions();
+			} catch (SQLException e) {
+				outputArea.appendText("error when calling list article\n");
+				e.printStackTrace();
+			} catch (Exception e) {
+				outputArea.appendText("error going back to article options\n");
+				e.printStackTrace();
+			}
+        });
+        
+        // when back is pressed
+        backButton.setOnAction(event -> {
+        	((VBox) outputArea.getParent()).getChildren().remove(listBox);
+            try {
+            	((VBox) outputArea.getParent()).getChildren().remove(listBox);
+				articleOptions();
+			} catch (Exception e) {
+				outputArea.appendText("Error going back\n");
+				e.printStackTrace();
+			}  
+        });
+    }
+    
     // Method to update an article
     private void updateArticle() throws Exception {
     	

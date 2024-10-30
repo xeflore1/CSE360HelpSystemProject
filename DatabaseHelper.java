@@ -32,6 +32,7 @@ class DatabaseHelper {
 	//	PreparedStatement pstmt
 	
 	private EncryptionHelper encryptionHelper;
+	//private ArticleIdHelper articleIdHelper;
 	
 	public DatabaseHelper() throws Exception {
 		encryptionHelper = new EncryptionHelper();
@@ -71,6 +72,7 @@ class DatabaseHelper {
 	    // table for articles
 	    String articleTable = "CREATE TABLE IF NOT EXISTS help_articles ("
                 + "id INT AUTO_INCREMENT PRIMARY KEY, "
+                + "unique_id BIGINT NOT NULL, "
 	    		+ "level VARCHAR(255), "
                 + "groupId VARCHAR(255), "
                 + "title VARCHAR(255), "
@@ -119,39 +121,6 @@ class DatabaseHelper {
 	    return userList;
 	}
 
-
-    // This method updates userlist in the database
-    /*public void saveUserListToDatabase(List<User> userList) throws Exception {
-        String insertOrUpdateUser = "INSERT INTO cse360users (username, password, roles, email, firstName, middleName, lastName, preferredName, isOneTimePassword, oneTimePassword, otpExpiry) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
-                + "ON DUPLICATE KEY UPDATE username = VALUES(username), password = VALUES(password), roles = VALUES(roles), email = VALUES(email), firstName = VALUES(firstName), middleName = VALUES(middleName), lastName = VALUES(lastName), preferredName = VALUES(preferredName), isOneTimePassword = VALUES(isOneTimePassword), oneTimePassword = VALUES(oneTimePassword), otpExpiry = VALUES(otpExpiry)";
-        
-        try (PreparedStatement pstmt = connection.prepareStatement(insertOrUpdateUser)) {
-            for (User user : userList) {
-            	// Convert char[] password to byte[] for encryption
-        	    byte[] passwordBytes = new String(user.getPassword()).getBytes();
-
-        	    // Encrypt the password using the username as part of the IV (since email isn't provided at this stage)
-        	    String encryptedPassword = Base64.getEncoder().encodeToString(
-        	            encryptionHelper.encrypt(passwordBytes, EncryptionUtils.getInitializationVector(user.getUsername().toCharArray()))
-        	    );
-        	    
-                pstmt.setString(1, user.getUsername());
-                pstmt.setString(2, encryptedPassword);  // Adjust password storage
-                pstmt.setString(3, serializeRoles(user.getRoles()));  // Convert roles set to string
-                pstmt.setString(4, user.getEmail());
-                pstmt.setString(5, user.getFirstName());
-                pstmt.setString(6, user.getMiddleName());
-                pstmt.setString(7, user.getLastName());
-                pstmt.setString(8, user.getPreferredName());
-                pstmt.setBoolean(9, user.isOneTimePassword());
-                pstmt.setString(10, user.getOneTimePassword());
-                pstmt.setTimestamp(11, Timestamp.valueOf(user.getOtpExpiry()));
-
-                pstmt.executeUpdate();  // Insert or update user
-            }
-        }
-    } */
 	public void saveUserListToDatabase(List<User> userList) throws SQLException {
 	    String insertUser = "INSERT INTO cse360users (username, password, roles, email, firstName, middleName, lastName, preferredName, isOneTimePassword, oneTimePassword, otpExpiry) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 	    String updateUser = "UPDATE cse360users SET password = ?, roles = ?, email = ?, firstName = ?, middleName = ?, lastName = ?, preferredName = ?, isOneTimePassword = ?, oneTimePassword = ?, otpExpiry = ? WHERE username = ?";
@@ -196,8 +165,6 @@ class DatabaseHelper {
 	        }
 	    }
 	}
-
-
 
 	// Check if the database is empty
 	public boolean isDatabaseEmpty() throws SQLException {
@@ -384,30 +351,47 @@ class DatabaseHelper {
 	    return roles;  // Return the populated set of roles
 	}
 
-	// Creates the article and all relevant information based on parameters inputted into StartCSE360.java:
-    public void createArticle(char[] level, char[] group, char[] title, char[] authors, char[] articleAbstract, char[] keywords, char[] body, char[] references) throws SQLException {
-        String insertArticle = "INSERT INTO help_articles (level, groupId, title, authors, abstract, keywords, body, references) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement pstmt = connection.prepareStatement(insertArticle)) {
-        	pstmt.setString(1, new String(level));
-            pstmt.setString(2, new String(group));
-        	pstmt.setString(3, new String(title));
-            pstmt.setString(4, new String(authors));
-            pstmt.setString(5, new String(articleAbstract));
-            pstmt.setString(6, new String(keywords));
-            pstmt.setString(7, new String(body));
-            pstmt.setString(8, new String(references));
-            pstmt.executeUpdate();
-        } finally {
-        	clearCharArray(level);
-            clearCharArray(group);
-        	clearCharArray(title);
-            clearCharArray(authors);
-            clearCharArray(articleAbstract);
-            clearCharArray(keywords);
-            clearCharArray(body);
-            clearCharArray(references);
-        }
-    }
+    
+    public void createArticle(char[] level, char[] group, char[] title, char[] authors, char[] articleAbstract,
+            char[] keywords, char[] body, char[] references) throws SQLException {
+		// create a long id for the article given its parameters
+    	long uniqueId = ArticleIdHelper.generateArticleId(level, group, title, authors, articleAbstract, keywords, body, references);  // Generate unique ID based on inputs
+		
+    	// used when restoring articles, check if the article already exists
+    	boolean check = articleExistsByUniqueId(uniqueId);
+    	
+    	if (!check) {
+			String insertArticle = "INSERT INTO help_articles (unique_id, level, groupId, title, authors, abstract, keywords, body, references) "
+			           + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+			
+			try (PreparedStatement pstmt = connection.prepareStatement(insertArticle)) {
+			pstmt.setLong(1, uniqueId);  // Use the generated articleId
+			pstmt.setString(2, new String(level));
+			pstmt.setString(3, new String(group));
+			pstmt.setString(4, new String(title));
+			pstmt.setString(5, new String(authors));
+			pstmt.setString(6, new String(articleAbstract));
+			pstmt.setString(7, new String(keywords));
+			pstmt.setString(8, new String(body));
+			pstmt.setString(9, new String(references));
+			pstmt.executeUpdate();
+			} finally {
+			clearCharArray(level);
+			clearCharArray(group);
+			clearCharArray(title);
+			clearCharArray(authors);
+			clearCharArray(articleAbstract);
+			clearCharArray(keywords);
+			clearCharArray(body);
+			clearCharArray(references);
+			}
+    	}
+    	else {
+    		System.out.print("article already exists");
+    	}
+	}
+
+    
 	
     // method clears charr array
     private void clearCharArray(char[] array) {
@@ -424,6 +408,8 @@ class DatabaseHelper {
             articlesList.append("[").append(rs.getInt("id")).append("] ")
                         .append(rs.getString("title")).append(" by ")
                         .append(rs.getString("authors")).append("\n");
+            
+            System.out.println(rs.getLong("unique_id"));
         }
         
         return articlesList.toString();
@@ -462,12 +448,14 @@ class DatabaseHelper {
         return articlesList.toString();
     }
 
+ // Method to update an article given its ID
+    public void updateArticle(long id, char[] level, char[] groupId, char[] title, char[] authors, char[] articleAbstract, char[] keywords, char[] body, char[] references) throws SQLException {
+        // Generate a new unique ID based on the updated fields
+        long newUniqueId = ArticleIdHelper.generateArticleId(level, groupId, title, authors, articleAbstract, keywords, body, references);
 
-    
-    // Deletes selected article from the database:
-    public void updateArticle(int id, char[] level, char[] groupId, char[] title, char[] authors, char[] articleAbstract, char[] keywords, char[] body, char[] references) throws SQLException {
-        String updateArticleSQL = "UPDATE help_articles SET level = ?, groupId = ?, title = ?, authors = ?, abstract = ?, keywords = ?, body = ?, references = ? WHERE id = ?";
-        try (PreparedStatement pstmt = connection.prepareStatement(updateArticleSQL)) {
+        String updateQuery = "UPDATE help_articles SET level = ?, groupId = ?, title = ?, authors = ?, abstract = ?, keywords = ?, body = ?, references = ?, unique_id = ? WHERE id = ?";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(updateQuery)) {
             pstmt.setString(1, new String(level));
             pstmt.setString(2, new String(groupId));
             pstmt.setString(3, new String(title));
@@ -476,17 +464,28 @@ class DatabaseHelper {
             pstmt.setString(6, new String(keywords));
             pstmt.setString(7, new String(body));
             pstmt.setString(8, new String(references));
-            pstmt.setInt(9, id);  // Set the id for the WHERE clause
-            int rowsAffected = pstmt.executeUpdate();
-            
-            if (rowsAffected > 0) {
-                System.out.println("Article with ID " + id + " updated successfully.");
+            pstmt.setLong(9, newUniqueId);  // Set the unique_id based on new data
+            pstmt.setLong(10, id);  // Specify the article ID to update
+
+            int rowsUpdated = pstmt.executeUpdate();
+            if (rowsUpdated > 0) {
+                System.out.println("Article updated successfully.");
             } else {
-                System.out.println("No article found with ID " + id + ".");
+                System.out.println("Article with ID " + id + " not found.");
             }
         } catch (SQLException e) {
-            System.out.println("Error updating article with ID " + id + ": " + e.getMessage());
-            throw e;  // Re-throw the exception to handle it elsewhere if needed
+            System.out.println("Error updating article: " + e.getMessage());
+            throw e;
+        } finally {
+            // Clear sensitive character arrays after use
+            clearCharArray(level);
+            clearCharArray(groupId);
+            clearCharArray(title);
+            clearCharArray(authors);
+            clearCharArray(articleAbstract);
+            clearCharArray(keywords);
+            clearCharArray(body);
+            clearCharArray(references);
         }
     }
 
@@ -506,8 +505,7 @@ class DatabaseHelper {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {
             while (rs.next()) {
                 // Create the line to be written
-                String line = rs.getInt("id") + "," 
-                		    + rs.getString("level") + ","
+                String line = rs.getString("level") + ","
                 			+ rs.getString("groupId") + ","
                             + rs.getString("title") + "," 
                             + rs.getString("authors") + ","
@@ -542,16 +540,15 @@ class DatabaseHelper {
             while (rs.next()) {
                 hasArticles = true;
 
-                // Create the line to be written
-                String line = rs.getInt("id") + "," 
-                              + rs.getString("level") + ","
-                              + rs.getString("groupId") + ","
-                              + rs.getString("title") + "," 
-                              + rs.getString("authors") + ","
-                              + rs.getString("abstract") + "," 
-                              + rs.getString("keywords") + "," 
-                              + rs.getString("body") + "," 
-                              + rs.getString("references");
+             // Create the line to be written
+                String line = rs.getString("level") + ","
+                			+ rs.getString("groupId") + ","
+                            + rs.getString("title") + "," 
+                            + rs.getString("authors") + ","
+                            + rs.getString("abstract") + "," 
+                            + rs.getString("keywords") + "," 
+                            + rs.getString("body") + "," 
+                            + rs.getString("references");
 
                 // Debug print to check the format of the line
                 System.out.println("Writing line to backup: " + line);
@@ -573,26 +570,28 @@ class DatabaseHelper {
             throw e;
         }
     }
-
-
-
-    // Loads selected article previously saved to the database:
+    
+ // Loads selected article previously saved to the database:
     public void restoreArticles(String filename) throws SQLException, IOException {
         clearArticles();
         try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] fields = line.split(",");
-                if (fields.length < 9) {
+                if (fields.length < 8) {  // Adjusted to 9 for the number of fields
                     System.err.println("Skipping line due to insufficient fields: " + line);
                     continue;
                 }
-                createArticle(fields[1].toCharArray(), fields[2].toCharArray(), fields[3].toCharArray(),
-                        fields[4].toCharArray(), fields[5].toCharArray(), fields[6].toCharArray(), 
-                        fields[7].toCharArray(), fields[8].toCharArray());
+
+                // Create the article using the fields without passing uniqueId
+                createArticle(fields[0].toCharArray(), fields[1].toCharArray(), fields[2].toCharArray(),
+                        fields[3].toCharArray(), fields[4].toCharArray(), fields[5].toCharArray(), 
+                        fields[6].toCharArray(), fields[7].toCharArray());
             }
         }
     }
+
+
     
     // Loads selected article previously saved to the database:
     public void mergeArticles(String filename) throws SQLException, IOException {
@@ -600,16 +599,71 @@ class DatabaseHelper {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] fields = line.split(",");
-                if (fields.length < 9) {
+                if (fields.length < 8) {
                     System.err.println("Skipping line due to insufficient fields: " + line);
                     continue;
                 }
-                createArticle(fields[1].toCharArray(), fields[2].toCharArray(), fields[3].toCharArray(),
-                        fields[4].toCharArray(), fields[5].toCharArray(), fields[6].toCharArray(), 
-                        fields[7].toCharArray(), fields[8].toCharArray());
+                createArticle(fields[0].toCharArray(), fields[1].toCharArray(), fields[2].toCharArray(),
+                        fields[3].toCharArray(), fields[4].toCharArray(), fields[5].toCharArray(), 
+                        fields[6].toCharArray(), fields[7].toCharArray());
             }
         }
     }
+    
+    // checks if an article already exists given a long
+    public boolean articleExistsByUniqueId(long uniqueId) throws SQLException {
+        String query = "SELECT COUNT(*) FROM help_articles WHERE unique_id = ?";
+        boolean exists = false;
+
+        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+            pstmt.setLong(1, uniqueId);  // Set the unique_id parameter
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                // If the count is greater than 0, the article exists
+                exists = rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) {
+            System.out.println("Error checking article existence: " + e.getMessage());
+            throw e;
+        }
+
+        return exists;  // Return true if the article exists, false otherwise
+    }
+
+    // method returns a string with the details of an article
+    public String getFormattedArticle(String title, String author) throws SQLException {
+        StringBuilder formattedArticle = new StringBuilder();
+        String query = "SELECT * FROM help_articles WHERE title = ? AND authors = ?";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+            pstmt.setString(1, title);
+            pstmt.setString(2, author);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                // Add article details to the StringBuilder
+                formattedArticle.append("****Article Details****").append("\n")
+                				.append("Title: ").append(rs.getString("title")).append("\n")
+                                .append("Authors: ").append(rs.getString("authors")).append("\n")
+                                .append("Level: ").append(rs.getString("level")).append("\n")
+                                .append("Group ID: ").append(rs.getString("groupId")).append("\n")
+                                .append("Abstract: ").append(rs.getString("abstract")).append("\n")
+                                .append("Keywords: ").append(rs.getString("keywords")).append("\n")
+                                .append("Body:\n").append(rs.getString("body")).append("\n")
+                                .append("References:\n").append(rs.getString("references")).append("\n")
+                				.append("***********************").append("\n");
+            } else {
+                return "No article found with the specified title and author.";
+            }
+        } catch (SQLException e) {
+            System.out.println("Error retrieving article: " + e.getMessage());
+            throw e;
+        }
+
+        return formattedArticle.toString(); // Return the formatted article string
+    }
+
     
  // Memory freeing classes:
     private void clearArticles() throws SQLException {

@@ -83,6 +83,11 @@ public class User {
     public void addRole(Role role) {
         roles.add(role);
     }
+    
+    // Setter for roles
+    public void setRoles(Set<Role> roles) {
+        this.roles = roles;
+    }
 
     // Method to remove a role
     public void removeRole(Role role) {

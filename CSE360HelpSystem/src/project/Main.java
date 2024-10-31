@@ -1,27 +1,38 @@
-
 package project;
 
 import javafx.application.Application;
+
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
+
 import javafx.stage.Stage;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.text.Text;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Random;
-
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 /*******
  * <p> Main class </p>
@@ -39,6 +50,9 @@ public class Main extends Application {
     private User currentUser = null;
     private TextArea outputArea = new TextArea();
     private VBox optionBox = new VBox(10);  // Reusable optionBox to prevent multiple instances
+    private static DatabaseHelper databaseHelper; // database variable
+    private Role currRole; // keeps track of the current role of the user
+
 
     /**********************************************************************************************
 	 * This is the method that performs the test cases
@@ -57,110 +71,150 @@ public class Main extends Application {
      * @param theStage    The pop up stage that handles all of the user interaction
      */
     @Override
-    public void start(Stage theStage) { // Method for the first user account created (admin)
+    public void start(Stage theStage) throws Exception { // Method for the first user account created (admin)
         theStage.setTitle("ASU Help System");
 
-        Pane firstLogin = new Pane();
-        VBox formContainer = new VBox(5); // Main container for all components
-        formContainer.setAlignment(Pos.CENTER);
-        formContainer.setPadding(new Insets(10, 10, 20, 10)); // Add bottom padding for buffer
+        // Initialize the database helper
+        databaseHelper = new DatabaseHelper();
         
-        Text welcomeText = new Text("Welcome to the ASU Help System");
-        Button createUserButton = new Button("Create Admin");
-        formContainer.getChildren().addAll(welcomeText, createUserButton, outputArea);
+        try {
+        	// connect to database
+        	databaseHelper.connectToDatabase();  // Connect to the database
+            // Load users from the database into the userList
+            userList = databaseHelper.loadUsersFromDatabase();
+        } catch (Exception e) {
+            outputArea.appendText("Error loading users from the database: " + e.getMessage() + "\n");
+        }
 
-        outputArea.setPrefHeight(200);
-        outputArea.setEditable(false);
-        Scene mainScene = new Scene(formContainer, 500, 800);
-        theStage.setScene(mainScene);
+        // Check if userList is empty
+        if (userList.isEmpty()) {
+	        Pane firstLogin = new Pane();
+	        VBox formContainer = new VBox(5); // Main container for all components
+	        formContainer.setAlignment(Pos.CENTER);
+	        formContainer.setPadding(new Insets(10, 10, 20, 10)); // Add bottom padding for buffer
+	        
+	        Text welcomeText = new Text("Welcome to the ASU Help System");
+	        Button createUserButton = new Button("Create Admin");
+	        formContainer.getChildren().addAll(welcomeText, createUserButton, outputArea);
+	
+	        outputArea.setPrefHeight(200);
+	        outputArea.setEditable(false);
+	        Scene mainScene = new Scene(formContainer, 500, 800);
+	        theStage.setScene(mainScene);
+	
+	        // Create user fields and labels
+	        Label usernameLabel = new Label("Enter Username:");
+	        TextField usernameInput = new TextField();
+	        Label passwordLabel = new Label("Enter Password:");
+	        PasswordField passwordInput = new PasswordField();
+	        Label confirmPasswordLabel = new Label("Confirm Password:");
+	        PasswordField confirmPasswordInput = new PasswordField();
+	        // Button creation
+	        Button submitButton = new Button("Submit");
+	        Button cancelButton = new Button("Cancel");
+	
+	        // Add all components to form container (initially hidden)
+	        formContainer.getChildren().addAll(
+	            usernameLabel, usernameInput, 
+	            passwordLabel, passwordInput, 
+	            confirmPasswordLabel, confirmPasswordInput,
+	            submitButton, cancelButton
+	        );
+	        
+	        // components are initially not visible
+	        usernameLabel.setVisible(false);
+	        usernameInput.setVisible(false);
+	        passwordLabel.setVisible(false);
+	        passwordInput.setVisible(false);
+	        confirmPasswordLabel.setVisible(false);
+	        confirmPasswordInput.setVisible(false);
+	        submitButton.setVisible(false);
+	        cancelButton.setVisible(false);
+	
+	        // Event handler to show admin creation form
+	        createUserButton.setOnAction(event -> {
+	            outputArea.appendText("You are the first user and will be made an Admin.\n");
+	            usernameLabel.setVisible(true);
+	            usernameInput.setVisible(true);
+	            passwordLabel.setVisible(true);
+	            passwordInput.setVisible(true);
+	            confirmPasswordLabel.setVisible(true);
+	            confirmPasswordInput.setVisible(true);
+	            submitButton.setVisible(true);
+	            cancelButton.setVisible(true);
+	            createUserButton.setDisable(true);
+	        });
+	
+	        // Submit button handler for admin creation
+	        submitButton.setOnAction(event -> {
+	            String username = usernameInput.getText();
+	            char[] password = passwordInput.getText().toCharArray();
+	            char[] confirmPassword = confirmPasswordInput.getText().toCharArray();
+	            // create admin
+	            if (Arrays.equals(password, confirmPassword)) {
+	                if (adminUser == null) {
+	                    adminUser = new Admin(username, password);
+	                    adminUser.addRole(Role.ADMIN);
+	                    userList.add(adminUser);
+	                    currentUser = adminUser;
+	                    outputArea.appendText("Admin account created.\n");
+	                } else {
+	                    User newUser = new User(username, password);
+	                    newUser.addRole(Role.STUDENT);  // Default role for regular users
+	                    userList.add(newUser);
+	                    currentUser = newUser;
+	                    outputArea.appendText("User account created.\n");
+	                }
+	
+	                usernameLabel.setVisible(false);
+	                usernameInput.setVisible(false);
+	                passwordLabel.setVisible(false);
+	                passwordInput.setVisible(false);
+	                confirmPasswordLabel.setVisible(false);
+	                confirmPasswordInput.setVisible(false);
+	                submitButton.setVisible(false);
+	                cancelButton.setVisible(false);
+	
+	                collectUserInfo();  // Collect additional user information
+	            } else {
+	                outputArea.appendText("Passwords do not match. Please try again.\n");
+	            }
+	        });
+	
+	        cancelButton.setOnAction(event -> {
+	            usernameInput.clear();
+	            passwordInput.clear();
+	            confirmPasswordInput.clear();
+	            createUserButton.setDisable(false);
+	        });
+	
+	        theStage.show();
+        }
+        else {
+        	// Set up the main container for existing users
+            Pane existingUserPane = new Pane();
+            VBox existingUserContainer = new VBox(5); // Main container for all components
+            existingUserContainer.setAlignment(Pos.CENTER);
+            existingUserContainer.setPadding(new Insets(10, 10, 20, 10)); // Add bottom padding for buffer
+            
+            // Welcome text
+            Text existingUserText = new Text("Welcome back to the ASU Help System");
+            existingUserContainer.getChildren().add(existingUserText);
 
-        // Create user fields and labels
-        Label usernameLabel = new Label("Enter Username:");
-        TextField usernameInput = new TextField();
-        Label passwordLabel = new Label("Enter Password:");
-        PasswordField passwordInput = new PasswordField();
-        Label confirmPasswordLabel = new Label("Confirm Password:");
-        PasswordField confirmPasswordInput = new PasswordField();
-        // Button creation
-        Button submitButton = new Button("Submit");
-        Button cancelButton = new Button("Cancel");
+            // Output area for messages
+            outputArea.setPrefHeight(200);
+            outputArea.setEditable(false);
+            existingUserContainer.getChildren().add(outputArea);
 
-        // Add all components to form container (initially hidden)
-        formContainer.getChildren().addAll(
-            usernameLabel, usernameInput, 
-            passwordLabel, passwordInput, 
-            confirmPasswordLabel, confirmPasswordInput,
-            submitButton, cancelButton
-        );
-        
-        // components are initially not visible
-        usernameLabel.setVisible(false);
-        usernameInput.setVisible(false);
-        passwordLabel.setVisible(false);
-        passwordInput.setVisible(false);
-        confirmPasswordLabel.setVisible(false);
-        confirmPasswordInput.setVisible(false);
-        submitButton.setVisible(false);
-        cancelButton.setVisible(false);
+            // Set the scene
+            Scene existingUserScene = new Scene(existingUserContainer, 500, 800);
+            theStage.setScene(existingUserScene);
+          
+            showSignInOrCreateAccount();
 
-        // Event handler to show admin creation form
-        createUserButton.setOnAction(event -> {
-            outputArea.appendText("You are the first user and will be made an Admin.\n");
-            usernameLabel.setVisible(true);
-            usernameInput.setVisible(true);
-            passwordLabel.setVisible(true);
-            passwordInput.setVisible(true);
-            confirmPasswordLabel.setVisible(true);
-            confirmPasswordInput.setVisible(true);
-            submitButton.setVisible(true);
-            cancelButton.setVisible(true);
-            createUserButton.setDisable(true);
-        });
-
-        // Submit button handler for admin creation
-        submitButton.setOnAction(event -> {
-            String username = usernameInput.getText();
-            char[] password = passwordInput.getText().toCharArray();
-            char[] confirmPassword = confirmPasswordInput.getText().toCharArray();
-            // create admin
-            if (Arrays.equals(password, confirmPassword)) {
-                if (adminUser == null) {
-                    adminUser = new Admin(username, password);
-                    adminUser.addRole(Role.ADMIN);
-                    userList.add(adminUser);
-                    currentUser = adminUser;
-                    outputArea.appendText("Admin account created.\n");
-                } else {
-                    User newUser = new User(username, password);
-                    newUser.addRole(Role.STUDENT);  // Default role for regular users
-                    userList.add(newUser);
-                    currentUser = newUser;
-                    outputArea.appendText("User account created.\n");
-                }
-
-                usernameLabel.setVisible(false);
-                usernameInput.setVisible(false);
-                passwordLabel.setVisible(false);
-                passwordInput.setVisible(false);
-                confirmPasswordLabel.setVisible(false);
-                confirmPasswordInput.setVisible(false);
-                submitButton.setVisible(false);
-                cancelButton.setVisible(false);
-
-                collectUserInfo();  // Collect additional user information
-            } else {
-                outputArea.appendText("Passwords do not match. Please try again.\n");
-            }
-        });
-
-        cancelButton.setOnAction(event -> {
-            usernameInput.clear();
-            passwordInput.clear();
-            confirmPasswordInput.clear();
-            createUserButton.setDisable(false);
-        });
-
-        theStage.show();
+            theStage.show();
+        	
+        }
     }
     
     /*********
@@ -215,17 +269,19 @@ public class Main extends Application {
 
             outputArea.appendText("User details saved.\n");
             
-            // admin should be taken to the login screen
-            if (currentUser instanceof Admin) {
+            // Take user to the login screen
+            ((VBox) outputArea.getParent()).getChildren().remove(userInfoBox);
+        	showSignInOrCreateAccount();
+            /*if (currentUser instanceof Admin) {
             	((VBox) outputArea.getParent()).getChildren().remove(userInfoBox);
             	showSignInOrCreateAccount();
             }
             else {
             // Clear the user info box
             ((VBox) outputArea.getParent()).getChildren().remove(userInfoBox);
-            Set<Role> currRole = currentUser.getRoles();
-            showUserOptions(Role.STUDENT);  // Show the options for the student user
-            }
+            //Set<Role> currRole = currentUser.getRoles();
+            showUserOptions(currRole);  // Show the options for the student user
+            } */
         });
 
         // Cancel button action
@@ -249,12 +305,13 @@ public class Main extends Application {
         // Clear the optionBox before adding new options
         optionBox.getChildren().clear();
 
-        // Create buttons for each user option
+        // Create buttons that multiple users have
         Button signOutButton = new Button("Sign out");
         Button quitButton = new Button("Quit");
+        Button aritcleButton = new Button("Article settings");
 
         // Add admin options only if the current user is an admin
-        if (role == Role.ADMIN) {
+        if (currRole == Role.ADMIN) {
             Button printUsersButton = new Button("Print users");
             Button deleteUserButton = new Button("Delete user");
             Button inviteUserButton = new Button("Invite a user");
@@ -267,6 +324,14 @@ public class Main extends Application {
             inviteUserButton.setOnAction(e -> inviteUser());
             addOrRemoveRole.setOnAction(e -> addRemoveRole());
             resetUserButton.setOnAction(e -> resetUser());
+            aritcleButton.setOnAction(e -> {
+				try {
+					articleOptions();
+				} catch (Exception e1) {
+					outputArea.appendText("Error going to article options:\n");
+					e1.printStackTrace();
+				}
+			});
             
             optionBox.getChildren().addAll(
                 new Label("Select an option:"),
@@ -276,9 +341,31 @@ public class Main extends Application {
                 inviteUserButton,
                 addOrRemoveRole,
                 resetUserButton,
+                aritcleButton,
                 quitButton
             );
-        } else {
+        } 
+        else if (currRole == Role.INSTRUCTOR) {  	
+        	optionBox.getChildren().addAll(
+                    new Label("Select an option:"),
+                    aritcleButton,
+                    signOutButton,
+                    quitButton
+            );
+        	
+        	aritcleButton.setOnAction(e -> {
+				try {
+					articleOptions();
+				} catch (Exception e1) {
+					outputArea.appendText("Error going to article options:\n");
+					e1.printStackTrace();
+				}
+			}); 
+        	
+        }
+        
+        
+        else  if (currRole == Role.STUDENT){
             // For regular users and instructors, only show sign out and quit options
             optionBox.getChildren().addAll(
                 new Label("Select an option:"),
@@ -290,6 +377,15 @@ public class Main extends Application {
         // Set sign out and quit button actions
         signOutButton.setOnAction(e -> signOut());
         quitButton.setOnAction(e -> {
+        	
+        	// Save the updated user list to the database
+            try {
+				databaseHelper.saveUserListToDatabase(userList);
+			} catch (Exception e1) {
+				outputArea.appendText("Error saving list to database\n");
+				e1.printStackTrace();
+			}
+        	
             outputArea.appendText("Goodbye!\n");
             System.exit(0);
         });
@@ -428,15 +524,18 @@ public class Main extends Application {
         	RadioButton selectedRadioButton = (RadioButton) roleToggleGroup.getSelectedToggle();
         	// if admin was selected
         	if (selectedRadioButton != null && selectedRadioButton.getText().equals("ADMIN")) {
-        	    showUserOptions(Role.ADMIN);
+        		currRole = Role.ADMIN;
+        	    showUserOptions(currRole);
         	}
         	// if instructor was selected
         	else if (selectedRadioButton != null && selectedRadioButton.getText().equals("INSTRUCTOR")) {
-        	    showUserOptions(Role.INSTRUCTOR);
+        		currRole = Role.INSTRUCTOR;
+        	    showUserOptions(currRole);
         	}
         	// if student was selected
         	else if (selectedRadioButton != null && selectedRadioButton.getText().equals("STUDENT")) {
-        	    showUserOptions(Role.STUDENT);
+        		currRole = Role.STUDENT;
+        	    showUserOptions(currRole);
         	}	 
             else {
                 outputArea.appendText("Please select a role.\n");
@@ -643,7 +742,7 @@ public class Main extends Application {
             collectUserInfo();  // Pass the newUser object to collectUserInfo
             userList.add(newUser);
             currentUser = newUser;
-
+           
             // Notify user of the roles created
             outputArea.appendText("Account was successfully invited.\n");
 
@@ -1100,4 +1199,596 @@ public class Main extends Application {
             showUserOptions(Role.ADMIN);  // Show options again when going back
         });
     }
+
+    /*********
+     * This is the method used to display the menu options for article settings
+     * Exception handling takes care of any database errors
+     */
+    private void articleOptions() throws Exception {        
+        
+    	outputArea.appendText("Select an option\n");
+        
+    	clearPreviousOptionBox();  // Ensure only one options box is visible
+        // Clear the optionBox before adding new options
+        optionBox.getChildren().clear();
+        
+        // All choices for article settings
+        Button listArticles = new Button("List articles");
+        Button listArticlesByGroup = new Button("List articles by group");
+        Button viewArticle = new Button("View an article");
+        Button createArticles = new Button("Create article");
+        Button updateArticle = new Button("Update article");
+        Button deleteArticles = new Button("Delete article");
+        Button backupArticles = new Button("Backup articles");
+        Button restoreArticles = new Button("Restore articles");
+        Button back = new Button("Back");
+        
+        // Set button actions
+        listArticles.setOnAction(e -> {
+			try {
+				String temp = databaseHelper.listArticles();
+				outputArea.appendText(temp);
+			} catch (SQLException e1) {
+				outputArea.appendText("error listing articles");
+				e1.printStackTrace();
+			}
+		});
+        listArticlesByGroup.setOnAction(e -> {
+        	try {
+				listByGroup();
+			} catch (Exception e1) {
+				outputArea.appendText("error calling list articles by group\n");
+				e1.printStackTrace();
+			}
+        });
+        viewArticle.setOnAction(e -> {
+        	try {
+				viewArticle();
+			} catch (Exception e1) {
+				outputArea.appendText("error calling view article");
+				e1.printStackTrace();
+			}
+        });
+        createArticles.setOnAction(e -> {
+			try {
+				createArticle();
+			} catch (Exception e1) {
+				outputArea.appendText("error creating article");
+				e1.printStackTrace();
+			}
+		});
+        updateArticle.setOnAction(e -> {
+        	try {
+				updateArticle();
+			} catch (Exception e1) {
+				outputArea.appendText("error trying to call update article");
+				e1.printStackTrace();
+			}
+        });
+        deleteArticles.setOnAction(e -> {
+			try {
+				deleteArticle();
+			} catch (Exception e1) {
+				outputArea.appendText("error trying to delete article");
+				e1.printStackTrace();
+			}
+		});
+        backupArticles.setOnAction(e -> {
+			try {
+				backupArticles();
+			} catch (Exception e1) {
+				outputArea.appendText("error trying to call backup articles\n");
+				e1.printStackTrace();
+			}
+		});
+        restoreArticles.setOnAction(e -> {
+			try {
+				restoreArticles();
+			} catch (Exception e1) {
+				outputArea.appendText("error trying to call restore articles\n");
+				e1.printStackTrace();
+			}
+		});
+        back.setOnAction(e -> {
+        	//((VBox) outputArea.getParent()).getChildren().remove(deleteBox);
+            showUserOptions(currRole);  // Show options again when going back
+        });
+        
+        optionBox.getChildren().addAll(
+            new Label("Select an option:"),
+            listArticles,
+            listArticlesByGroup,
+            viewArticle,
+            createArticles,
+            updateArticle,
+            deleteArticles,
+            backupArticles,
+            restoreArticles,
+            back
+        );
+        
+        optionBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(optionBox);
+    }
+    
+    /*********
+     * This is the method used to create an article
+     * Exception handling takes care of any database errors
+     */
+    private void createArticle() throws Exception {
+    	
+    	outputArea.appendText("Enter details to create a new account.\n");
+
+        // Create input fields for article details
+    	Label level = new Label("Enter level:");
+        TextField levelInput = new TextField();
+    	Label group = new Label("Enter group (comma-seperated if multiple):");
+        TextField groupInput = new TextField();
+    	Label title = new Label("Enter title:");
+        TextField titleInput = new TextField();
+        Label authors = new Label("Enter authors:");
+        TextField authorsInput = new TextField();
+        Label articleAbstract = new Label("Enter article abstract:");
+        TextField abstractInput = new TextField();
+        Label keywords = new Label("Enter keywords (comma-seperated):");
+        TextField keywordsInput = new TextField();
+        Label body = new Label("Enter body:");
+        TextField bodyInput = new TextField();
+        Label references = new Label("Enter references:");
+        TextField referencesInput = new TextField();
+        
+        // buttons
+        Button createButton = new Button("Create article");
+        Button backButton = new Button("Back");
+     
+        // Create a VBox for input fields
+        VBox createBox = new VBox(10, level, levelInput, group, groupInput, title, titleInput, authors, authorsInput,
+        		articleAbstract, abstractInput,
+        		keywords, keywordsInput, 
+        		body, bodyInput, references, referencesInput, createButton, backButton);
+        
+        createBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(createBox);
+        
+        clearPreviousOptionBox();
+
+	// set action for create
+        createButton.setOnAction(event -> {
+	        char[] levelChar = levelInput.getText().toCharArray();
+	        char[] groupChar = groupInput.getText().toCharArray();
+	        char[] titleChar = titleInput.getText().toCharArray();
+	        char[] authorsChar = authorsInput.getText().toCharArray();
+	        char[] articleAbstractChar = abstractInput.getText().toCharArray();
+	        char[] keywordsChar = keywordsInput.getText().toCharArray();
+	        char[] bodyChar = bodyInput.getText().toCharArray();
+	        char[] referencesChar = referencesInput.getText().toCharArray();
+	
+	        try {
+				databaseHelper.createArticle(levelChar, groupChar, titleChar, authorsChar, 
+						articleAbstractChar, keywordsChar, bodyChar, referencesChar);
+				outputArea.appendText("Article created successfully.\n");
+				((VBox) outputArea.getParent()).getChildren().remove(createBox);
+				articleOptions();
+			} catch (SQLException e) {
+				outputArea.appendText("Article not created successfully.\n");
+				e.printStackTrace();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+        });
+
+	// set action for back
+        backButton.setOnAction(event -> {
+            ((VBox) outputArea.getParent()).getChildren().remove(createBox);
+            try {
+				articleOptions();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}  // Show user options
+        });
+    }
+    
+    /*********
+     * This is the method used to list articles by group.
+     * Exception handling takes care of any database errors
+     */
+    private void listByGroup() throws Exception {
+            
+        // Create input fields for sequence number
+    	Label group = new Label("Enter group:");
+        TextField groupInput = new TextField();
+        // Buttons
+    	Button listButton = new Button("List articles");
+    	Button backButton = new Button("Back");
+    	
+    	// Create a VBox for input fields
+        VBox listBox = new VBox(10, group, groupInput, listButton, backButton);
+        
+        listBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(listBox);
+        
+        clearPreviousOptionBox();
+        
+        // When list by group is pressed
+        listButton.setOnAction(event -> {
+        	// get num input
+        	String groupStr = groupInput.getText();
+        	try {
+        		// call list by group method
+				String list = databaseHelper.listArticlesByGroup(groupStr);
+				outputArea.appendText(list);
+				((VBox) outputArea.getParent()).getChildren().remove(listBox);
+				articleOptions();
+			} catch (SQLException e) {
+				outputArea.appendText("error when calling list article\n");
+				e.printStackTrace();
+			} catch (Exception e) {
+				outputArea.appendText("error going back to article options\n");
+				e.printStackTrace();
+			}
+        });
+        
+        // when back is pressed
+        backButton.setOnAction(event -> {
+        	((VBox) outputArea.getParent()).getChildren().remove(listBox);
+            try {
+            	((VBox) outputArea.getParent()).getChildren().remove(listBox);
+				articleOptions();
+			} catch (Exception e) {
+				outputArea.appendText("Error going back\n");
+				e.printStackTrace();
+			}  
+        });
+    }
+    
+    /*********
+     * This is the method used to view an article
+     * Exception handling takes care of any database errors
+     */
+    private void viewArticle() throws Exception {
+            
+        // Create input fields for article
+    	Label title = new Label("Enter article title:");
+        TextField titleInput = new TextField();
+        Label author = new Label("Enter author:");
+        TextField authorInput = new TextField();
+        // Buttons
+    	Button viewButton = new Button("View article");
+    	Button backButton = new Button("Back");
+    	
+    	// Create a VBox for input fields
+        VBox listBox = new VBox(10, title, titleInput, author, authorInput, viewButton, backButton);
+        
+        listBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(listBox);
+        
+        clearPreviousOptionBox();
+        
+        // When view is pressed
+        viewButton.setOnAction(event -> {
+        	// get num input
+        	String artTitle = titleInput.getText();
+        	String artAuthor = authorInput.getText();
+        	try {
+        		// call view method
+				String details = databaseHelper.getFormattedArticle(artTitle, artAuthor);
+				outputArea.appendText(details);
+				((VBox) outputArea.getParent()).getChildren().remove(listBox);
+				articleOptions();
+			} catch (SQLException e) {
+				outputArea.appendText("error when calling list article\n");
+				e.printStackTrace();
+			} catch (Exception e) {
+				outputArea.appendText("error going back to article options\n");
+				e.printStackTrace();
+			}
+        });
+        
+        // when back is pressed
+        backButton.setOnAction(event -> {
+        	((VBox) outputArea.getParent()).getChildren().remove(listBox);
+            try {
+            	((VBox) outputArea.getParent()).getChildren().remove(listBox);
+				articleOptions();
+			} catch (Exception e) {
+				outputArea.appendText("Error going back\n");
+				e.printStackTrace();
+			}  
+        });
+    }
+    
+    /*********
+     * This is the method used to update articles
+     * Exception handling takes care of any database errors
+     */
+    private void updateArticle() throws Exception {
+    	
+    	outputArea.appendText("Update an article\n");
+
+        // Create input fields for sequence number
+    	Label seqNum = new Label("Enter article sequence number to update:");
+        TextField seqNumInput = new TextField();
+        Label level = new Label("Enter level:");
+        TextField levelInput = new TextField();
+    	Label group = new Label("Enter group:");
+        TextField groupInput = new TextField();
+    	Label title = new Label("Enter title:");
+        TextField titleInput = new TextField();
+        Label authors = new Label("Enter authors:");
+        TextField authorsInput = new TextField();
+        Label articleAbstract = new Label("Enter article abstract:");
+        TextField abstractInput = new TextField();
+        Label keywords = new Label("Enter keywords (comma-seperated):");
+        TextField keywordsInput = new TextField();
+        Label body = new Label("Enter body:");
+        TextField bodyInput = new TextField();
+        Label references = new Label("Enter references:");
+        TextField referencesInput = new TextField();
+        // Buttons
+    	Button updateButton = new Button("Update article");
+    	Button backButton = new Button("Back");
+    	
+    	// Create a VBox for input fields
+        VBox updateBox = new VBox(10, seqNum, seqNumInput, level, levelInput, group, 
+        		groupInput, title, titleInput, authors, authorsInput, articleAbstract, 
+        		abstractInput,keywords, keywordsInput, body, bodyInput, references, 
+        		referencesInput, updateButton, backButton);
+        
+        updateBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(updateBox);
+        
+        clearPreviousOptionBox();
+        
+        // When update is pressed
+        updateButton.setOnAction(event -> {
+        	// get all inputs
+        	int num = Integer.parseInt(seqNumInput.getText());
+        	char[] levelChar = levelInput.getText().toCharArray();
+	        char[] groupChar = groupInput.getText().toCharArray();
+	        char[] titleChar = titleInput.getText().toCharArray();
+	        char[] authorsChar = authorsInput.getText().toCharArray();
+	        char[] articleAbstractChar = abstractInput.getText().toCharArray();
+	        char[] keywordsChar = keywordsInput.getText().toCharArray();
+	        char[] bodyChar = bodyInput.getText().toCharArray();
+	        char[] referencesChar = referencesInput.getText().toCharArray();
+        	try {
+        		// call update method
+				databaseHelper.updateArticle(num, levelChar, groupChar, titleChar,
+						authorsChar, articleAbstractChar, keywordsChar, bodyChar, referencesChar);
+				outputArea.appendText("Article updated successfully\n");
+				((VBox) outputArea.getParent()).getChildren().remove(updateBox);
+				articleOptions();
+			} catch (SQLException e) {
+				outputArea.appendText("error when calling update article\n");
+				e.printStackTrace();
+			} catch (Exception e) {
+				outputArea.appendText("error going back to article options\n");
+				e.printStackTrace();
+			}
+        });
+        
+        // when back is pressed
+        backButton.setOnAction(event -> {
+        	((VBox) outputArea.getParent()).getChildren().remove(updateBox);
+            try {
+            	((VBox) outputArea.getParent()).getChildren().remove(updateBox);
+				articleOptions(); 
+			} catch (Exception e) {
+				outputArea.appendText("Error going back\n");
+				e.printStackTrace();
+			}  
+        });
+    }
+    
+    /*********
+     * This is the method used to delete articles from the database
+     * Exception handling takes care of any database errors
+     */
+    private void deleteArticle() throws Exception {
+        
+    	outputArea.appendText("Delete an article\n");
+
+        // Create input fields for sequence number
+    	Label seqNum = new Label("Enter article sequence number to delete:");
+        TextField seqNumInput = new TextField();
+        // Buttons
+    	Button deleteButton = new Button("Delete article");
+    	Button backButton = new Button("Back");
+    	
+    	// Create a VBox for input fields
+        VBox deleteBox = new VBox(10, seqNum, seqNumInput, deleteButton, backButton);
+        
+        deleteBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(deleteBox);
+        
+        clearPreviousOptionBox();
+        
+        // When delete is pressed
+        deleteButton.setOnAction(event -> {
+        	// get num input
+        	int num = Integer.parseInt(seqNumInput.getText());
+        	try {
+        		// call delete method
+				databaseHelper.deleteArticle(num);
+				outputArea.appendText("Article deleted successfully\n");
+				((VBox) outputArea.getParent()).getChildren().remove(deleteBox);
+				articleOptions();
+			} catch (SQLException e) {
+				outputArea.appendText("error when calling delete article\n");
+				e.printStackTrace();
+			} catch (Exception e) {
+				outputArea.appendText("error going back to article options\n");
+				e.printStackTrace();
+			}
+        });
+        
+        // when back is pressed
+        backButton.setOnAction(event -> {
+        	((VBox) outputArea.getParent()).getChildren().remove(deleteBox);
+            try {
+            	((VBox) outputArea.getParent()).getChildren().remove(deleteBox);
+				articleOptions();
+			} catch (Exception e) {
+				outputArea.appendText("Error going back\n");
+				e.printStackTrace();
+			}  
+        });
+    }
+
+    /*********
+     * This is the method used to back up articles in database
+     * Exception handling takes care of any database errors
+     */
+    private void backupArticles() throws Exception {
+        
+    	outputArea.appendText("Backup articles\n");
+        
+    	// Create input fields for file name
+    	Label file = new Label("Enter backup filename: \n");
+        TextField fileInput = new TextField();
+        Label group = new Label("Enter group name (optional): \n");
+        TextField groupInput = new TextField();
+        // Buttons
+    	Button backupButton = new Button("Backup articles to file");
+    	Button backButton = new Button("Back");
+    	
+    	// Create a VBox for input fields
+        VBox backupBox = new VBox(10, file, fileInput, group, groupInput, backupButton, backButton);
+        
+        backupBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(backupBox);
+        
+        clearPreviousOptionBox();
+        
+        backupButton.setOnAction(event -> {
+        	String groupStr = groupInput.getText();
+        	// If not group was specified
+        	if (groupStr.isEmpty()) {
+	        	try {
+					databaseHelper.backupArticles(fileInput.getText()); // Operation outsourced to DatabaseHelper.java
+					outputArea.appendText("Backed up articles to: " + fileInput.getText() + "\n");
+					((VBox) outputArea.getParent()).getChildren().remove(backupBox);
+					articleOptions();
+				} catch (SQLException e) {
+					outputArea.appendText("Error calling backup articles\n");
+					e.printStackTrace();
+				} catch (IOException e) {
+					outputArea.appendText("Error gettting text\n");
+					e.printStackTrace();
+				} catch (Exception e) {
+					outputArea.appendText("Error going back to article options\n");
+					e.printStackTrace();
+				} 
+        	}
+        	else {
+        		try {
+					databaseHelper.backupArticlesByGroup(fileInput.getText(), groupStr); // Operation outsourced to DatabaseHelper.java
+					outputArea.appendText("Backed up articles of group: " + groupStr + " to: " + fileInput.getText() + "\n");
+					((VBox) outputArea.getParent()).getChildren().remove(backupBox);
+					articleOptions();
+				} catch (SQLException e) {
+					outputArea.appendText("Error calling backup articles\n");
+					e.printStackTrace();
+				} catch (IOException e) {
+					outputArea.appendText("Error gettting text\n");
+					e.printStackTrace();
+				} catch (Exception e) {
+					outputArea.appendText("Error going back to article options\n");
+					e.printStackTrace();
+				} 
+        	}
+        });
+        
+        backButton.setOnAction(event -> {
+        	((VBox) outputArea.getParent()).getChildren().remove(backupBox);
+            try {
+            	((VBox) outputArea.getParent()).getChildren().remove(backupBox);
+				articleOptions();
+			} catch (Exception e) {
+				outputArea.appendText("Error going back\n");
+				e.printStackTrace();
+			}
+        });
+    }
+
+    /*********
+     * This is the method used to restore articles
+     * Exception handling takes care of any database errors
+     */
+    private void restoreArticles() throws Exception {
+    	outputArea.appendText("Restore articles\n");
+        
+    	// Create input fields for file name
+    	Label file = new Label("Enter backup filename: \n");
+        TextField fileInput = new TextField();
+        // Buttons
+    	Button backupButton = new Button("Remove existing articles");
+    	Button mergeButton = new Button("Merge articles");
+    	Button backButton = new Button("Back");
+    	
+    	// Create a VBox for input fields
+        VBox restoreBox = new VBox(10, file, fileInput, backupButton, mergeButton, backButton);
+        
+        restoreBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(restoreBox);
+        
+        clearPreviousOptionBox();
+
+	// action button for merge    
+        backupButton.setOnAction(event -> {
+        	try {
+        		String fileName = fileInput.getText();
+        		databaseHelper.restoreArticles(fileName); // Operation outsourced to DatabaseHelper.java
+				outputArea.appendText("Restored articles successfully\n");
+				((VBox) outputArea.getParent()).getChildren().remove(restoreBox);
+				articleOptions();
+			} catch (SQLException e) {
+				outputArea.appendText("Error calling restore articles\n");
+				e.printStackTrace();
+			} catch (IOException e) {
+				outputArea.appendText("Error gettting text\n");
+				e.printStackTrace();
+			} catch (Exception e) {
+				outputArea.appendText("Error going back to article options\n");
+				e.printStackTrace();
+			} 
+        });
+
+	// action button for merge
+        mergeButton.setOnAction(event -> {
+        	try {
+        		String fileName = fileInput.getText();
+        		databaseHelper.mergeArticles(fileName); // Operation outsourced to DatabaseHelper.java
+				outputArea.appendText("Merged articles successfully\n");
+				((VBox) outputArea.getParent()).getChildren().remove(restoreBox);
+				articleOptions();
+			} catch (SQLException e) {
+				outputArea.appendText("Error calling restore articles\n");
+				e.printStackTrace();
+			} catch (IOException e) {
+				outputArea.appendText("Error gettting text\n");
+				e.printStackTrace();
+			} catch (Exception e) {
+				outputArea.appendText("Error going back to article options\n");
+				e.printStackTrace();
+			} 
+        });
+
+	// action button for back
+        backButton.setOnAction(event -> {
+        	((VBox) outputArea.getParent()).getChildren().remove(restoreBox);
+            try {
+            	((VBox) outputArea.getParent()).getChildren().remove(restoreBox);
+				articleOptions();
+			} catch (Exception e) {
+				outputArea.appendText("Error going back\n");
+				e.printStackTrace();
+			}
+        });
+    } 
+    
+    
+    
 }

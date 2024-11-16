@@ -311,6 +311,7 @@ public class Main extends Application {
         // Create buttons that multiple users have
         Button signOutButton = new Button("Sign out");
         Button quitButton = new Button("Quit");
+	Button manageStudentsButton = new Button("Manage Students");
         Button aritcleButton = new Button("Article settings");
         
 
@@ -353,6 +354,7 @@ public class Main extends Application {
         	optionBox.getChildren().addAll(
                     new Label("Select an option:"),
                     aritcleButton,
+		    manageStudentsButton,
                     signOutButton,
                     quitButton
             );
@@ -399,8 +401,9 @@ public class Main extends Application {
         	
         }
 
-        // Set sign out and quit button actions
+        // Set sign out, quit and manage student button actions
         signOutButton.setOnAction(e -> signOut());
+	manageStudentsButton.setOnAction(e -> manageStudents());
         quitButton.setOnAction(e -> {
         	
         	// Save the updated user list to the database
@@ -1222,6 +1225,114 @@ public class Main extends Application {
         backButton.setOnAction(event -> {
             ((VBox) outputArea.getParent()).getChildren().remove(deleteBox);
             showUserOptions(Role.ADMIN);  // Show options again when going back
+        });
+    }
+
+    /*********
+     * This is the method used for instructors to manage students
+     */
+    private void manageStudents() {
+        outputArea.appendText("Manage Students:\n");
+        // Buttons for different student management actions
+        Button addSpecialAccessButton = new Button("Add Student to Special Access Group");
+        Button listStudentsButton = new Button("List Students and Their Access to Groups");
+        Button removeSpecialAccessButton = new Button("Remove Student's Special Access to Group");
+        Button deleteStudentButton = new Button("Delete Student From Help System");
+        Button backButton = new Button("Back");
+        VBox manageBox = new VBox(10, addSpecialAccessButton, listStudentsButton, removeSpecialAccessButton, deleteStudentButton, backButton);
+        manageBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(manageBox);
+        // Hide options while managing students
+        clearPreviousOptionBox();
+        // Add to Special Access Group functionality
+        addSpecialAccessButton.setOnAction(event -> {
+            TextField usernameInput = new TextField();
+            TextField groupInput = new TextField();
+            Button confirmAddGroupButton = new Button("Confirm Add to Group");
+            VBox addBox = new VBox(10, new Label("Enter student username:"), usernameInput,
+                    new Label("Enter special access group:"), groupInput, confirmAddGroupButton, backButton);
+            addBox.setAlignment(Pos.CENTER);
+            ((VBox) outputArea.getParent()).getChildren().remove(manageBox);
+            ((VBox) outputArea.getParent()).getChildren().add(addBox);
+            confirmAddGroupButton.setOnAction(addEvent -> {
+                String username = usernameInput.getText();
+                String group = groupInput.getText();
+                // Find student and add to special access group
+                User user = userList.stream().filter(u -> u.getUsername().equals(username) && u.hasRole(Role.STUDENT)).findFirst().orElse(null);
+                if (user != null) {
+                    user.addSpecialAccessGroup(group); // Assuming User class has this method
+                    outputArea.appendText("Student " + username + " added to group " + group + ".\n");
+                } else {
+                    outputArea.appendText("Student not found.\n");
+                }
+                ((VBox) outputArea.getParent()).getChildren().remove(addBox);
+                manageStudents();
+            });
+        });
+        // List Students and Groups functionality
+        listStudentsButton.setOnAction(event -> {
+            outputArea.appendText("List of Students and their Groups:\n");
+            userList.stream()
+                    .filter(user -> user.hasRole(Role.STUDENT))
+                    .forEach(user -> outputArea.appendText("- " + user.getUsername() + ": " + user.getSpecialAccessGroups() + "\n")); // Assuming User class has getSpecialAccessGroups()
+        });
+        // Remove Special Access Group functionality
+        removeSpecialAccessButton.setOnAction(event -> {
+            TextField usernameInput = new TextField();
+            TextField groupInput = new TextField();
+            Button confirmRemoveGroupButton = new Button("Confirm Remove from Group");
+            VBox removeBox = new VBox(10, new Label("Enter student username:"), usernameInput,
+                    new Label("Enter special access group to remove:"), groupInput, confirmRemoveGroupButton, backButton);
+            removeBox.setAlignment(Pos.CENTER);
+            ((VBox) outputArea.getParent()).getChildren().remove(manageBox);
+            ((VBox) outputArea.getParent()).getChildren().add(removeBox);
+            confirmRemoveGroupButton.setOnAction(removeEvent -> {
+                String username = usernameInput.getText();
+                String group = groupInput.getText();
+                // Find student and remove from special access group
+                User user = userList.stream().filter(u -> u.getUsername().equals(username) && u.hasRole(Role.STUDENT)).findFirst().orElse(null);
+                if (user != null && user.removeSpecialAccessGroup(group) == true) { // Assuming User class has removeSpecialAccessGroup()
+                    outputArea.appendText("Special access group " + group + " removed from student " + username + ".\n");
+                } else {
+                    outputArea.appendText("Student not found or group not assigned.\n");
+                }
+                ((VBox) outputArea.getParent()).getChildren().remove(removeBox);
+                manageStudents();
+            });
+        });
+        // Delete Student functionality
+        deleteStudentButton.setOnAction(event -> {
+            TextField usernameInput = new TextField();
+            Button confirmDeleteButton = new Button("Confirm Delete");
+            VBox deleteBox = new VBox(10, new Label("Enter student username to delete:"), usernameInput, confirmDeleteButton, backButton);
+            deleteBox.setAlignment(Pos.CENTER);
+            ((VBox) outputArea.getParent()).getChildren().remove(manageBox);
+            ((VBox) outputArea.getParent()).getChildren().add(deleteBox);
+            confirmDeleteButton.setOnAction(deleteEvent -> {
+                String username = usernameInput.getText();
+                Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+                alert.setTitle("Confirmation");
+                alert.setHeaderText("Are you sure you want to delete the student: " + username + "?");
+                alert.setContentText("This action cannot be undone.");
+                Optional<ButtonType> result = alert.showAndWait();
+                if (result.isPresent() && result.get() == ButtonType.OK) {
+                    boolean userRemoved = userList.removeIf(user -> user.getUsername().equals(username) && user.hasRole(Role.STUDENT));
+                    if (userRemoved) {
+                        outputArea.appendText("Student " + username + " has been deleted.\n");
+                    } else {
+                        outputArea.appendText("User not found or the user is not a student.\n");
+                    }
+                } else {
+                    outputArea.appendText("Deletion canceled.\n");
+                }
+                ((VBox) outputArea.getParent()).getChildren().remove(deleteBox);
+                manageStudents();
+            });
+        });
+        // Back button functionality
+        backButton.setOnAction(event -> {
+            ((VBox) outputArea.getParent()).getChildren().removeIf(node -> node != outputArea);
+            showUserOptions(Role.INSTRUCTOR);
         });
     }
 

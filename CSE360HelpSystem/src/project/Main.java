@@ -52,6 +52,9 @@ public class Main extends Application {
     private VBox optionBox = new VBox(10);  // Reusable optionBox to prevent multiple instances
     private static DatabaseHelper databaseHelper; // database variable
     private Role currRole; // keeps track of the current role of the user
+    private static List<String> genericQuestions = new ArrayList<>();
+    private static List<String> specificQuestions = new ArrayList<>();
+
 
 
     /**********************************************************************************************
@@ -309,6 +312,7 @@ public class Main extends Application {
         Button signOutButton = new Button("Sign out");
         Button quitButton = new Button("Quit");
         Button aritcleButton = new Button("Article settings");
+        
 
         // Add admin options only if the current user is an admin
         if (currRole == Role.ADMIN) {
@@ -365,13 +369,34 @@ public class Main extends Application {
         }
         
         
-        else  if (currRole == Role.STUDENT){
+        else if (currRole == Role.STUDENT) {
             // For regular users and instructors, only show sign out and quit options
-            optionBox.getChildren().addAll(
+            Button sendGenericMsg = new Button("Send generic message");
+            Button sendSpecificMsg = new Button("Send specific message");
+            Button viewArticles = new Button("View articles");
+        	optionBox.getChildren().addAll(
                 new Label("Select an option:"),
+                sendGenericMsg,
+                sendSpecificMsg,
+                viewArticles,
                 signOutButton,
                 quitButton
             );
+        	sendGenericMsg.setOnAction( e -> {
+        		sendGenericMessage();
+        	});
+        	sendSpecificMsg.setOnAction( e -> {
+        		sendSpecificMessage();
+        	});
+        	viewArticles.setOnAction(( e-> {
+        		try {
+        			studentListArticles();
+				} catch (Exception e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+        	}));
+        	
         }
 
         // Set sign out and quit button actions
@@ -1394,10 +1419,12 @@ public class Main extends Application {
      * This is the method used to list articles by group.
      * Exception handling takes care of any database errors
      */
+    // FIXME: ENWNEWNENWENWNEWNENWENWENWENWNENWENWENWNE
+
     private void listByGroup() throws Exception {
             
         // Create input fields for sequence number
-    	Label group = new Label("Enter group:");
+    	Label group = new Label("Enter group (or all):");
         TextField groupInput = new TextField();
         // Buttons
     	Button listButton = new Button("List articles");
@@ -1420,7 +1447,7 @@ public class Main extends Application {
 				String list = databaseHelper.listArticlesByGroup(groupStr);
 				outputArea.appendText(list);
 				((VBox) outputArea.getParent()).getChildren().remove(listBox);
-				articleOptions();
+				showUserOptions(currRole);
 			} catch (SQLException e) {
 				outputArea.appendText("error when calling list article\n");
 				e.printStackTrace();
@@ -1435,7 +1462,62 @@ public class Main extends Application {
         	((VBox) outputArea.getParent()).getChildren().remove(listBox);
             try {
             	((VBox) outputArea.getParent()).getChildren().remove(listBox);
-				articleOptions();
+				showUserOptions(currRole);
+			} catch (Exception e) {
+				outputArea.appendText("Error going back\n");
+				e.printStackTrace();
+			}  
+        });
+    }
+
+    /*********
+     * This is the method used to list articles by level.
+     * Exception handling takes care of any database errors
+     */
+    // FIXME: ENWNEWNENWENWNEWNENWENWENWENWNENWENWENWNE
+
+    private void listByLevel() throws Exception {
+        
+        // Create input fields for sequence number
+    	Label level = new Label("Enter level (beginner, intermediate, advanced, expert, all):");
+        TextField levelInput = new TextField();
+        // Buttons
+    	Button listButton = new Button("List articles");
+    	Button backButton = new Button("Back");
+    	
+    	// Create a VBox for input fields
+        VBox listBox = new VBox(10, level, levelInput, listButton, backButton);
+        
+        listBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(listBox);
+        
+        clearPreviousOptionBox();
+        
+        // When list by group is pressed
+        listButton.setOnAction(event -> {
+        	// get num input
+        	String levelStr = levelInput.getText();
+        	try {
+        		// call list by group method
+				String list = databaseHelper.listArticlesByLevel(levelStr);
+				outputArea.appendText(list);
+				((VBox) outputArea.getParent()).getChildren().remove(listBox);
+				showUserOptions(currRole);
+			} catch (SQLException e) {
+				outputArea.appendText("error when calling list article\n");
+				e.printStackTrace();
+			} catch (Exception e) {
+				outputArea.appendText("error going back to article options\n");
+				e.printStackTrace();
+			}
+        });
+        
+        // when back is pressed
+        backButton.setOnAction(event -> {
+        	((VBox) outputArea.getParent()).getChildren().remove(listBox);
+            try {
+            	((VBox) outputArea.getParent()).getChildren().remove(listBox);
+				showUserOptions(currRole);
 			} catch (Exception e) {
 				outputArea.appendText("Error going back\n");
 				e.printStackTrace();
@@ -1443,6 +1525,173 @@ public class Main extends Application {
         });
     }
     
+    /*********
+     * This is the method used to list articles by Unique Long Id.
+     * Exception handling takes care of any database errors
+     */
+    // FIXME: ENWNEWNENWENWNEWNENWENWENWENWNENWENWENWNE
+
+    private void listByUniqueLongId() throws Exception {
+        
+        // Create input fields for sequence number
+    	Label id = new Label("Enter unique long id:");
+        TextField idInput = new TextField();
+        // Buttons
+    	Button listButton = new Button("List article");
+    	Button backButton = new Button("Back");
+    	
+    	// Create a VBox for input fields
+        VBox listBox = new VBox(10, id, idInput, listButton, backButton);
+        
+        listBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(listBox);
+        
+        clearPreviousOptionBox();
+        
+        // When list by group is pressed
+        listButton.setOnAction(event -> {
+        	// get num input
+            long idLong = Long.parseLong(idInput.getText());
+        	try {
+        		// call list by group method
+				String list = databaseHelper.listArticlesByUniqueLongId(idLong);
+				outputArea.appendText(list);
+				((VBox) outputArea.getParent()).getChildren().remove(listBox);
+				showUserOptions(currRole);
+			} catch (SQLException e) {
+				outputArea.appendText("error when calling list article\n");
+				e.printStackTrace();
+			} catch (Exception e) {
+				outputArea.appendText("error going back to article options\n");
+				e.printStackTrace();
+			}
+        });
+        
+        // when back is pressed
+        backButton.setOnAction(event -> {
+        	((VBox) outputArea.getParent()).getChildren().remove(listBox);
+            try {
+            	((VBox) outputArea.getParent()).getChildren().remove(listBox);
+				showUserOptions(currRole);
+			} catch (Exception e) {
+				outputArea.appendText("Error going back\n");
+				e.printStackTrace();
+			}  
+        });
+    }
+    
+    /*********
+     * This is the method used to list articles by level and group.
+     * Exception handling takes care of any database errors
+     */
+    // FIXME: ENWNEWNENWENWNEWNENWENWENWENWNENWENWENWNE
+
+    private void listByLevelAndGroup() throws Exception {
+        
+        // Create input fields for sequence number
+    	Label level = new Label("Enter level (beginner, intermediate, advanced, expert, all):");
+        TextField levelInput = new TextField();
+        Label group = new Label("Enter group (or all):");
+        TextField groupInput = new TextField();
+        // Buttons
+    	Button listButton = new Button("List articles");
+    	Button backButton = new Button("Back");
+    	
+    	// Create a VBox for input fields
+        VBox listBox = new VBox(10, level, levelInput, group, groupInput, listButton, backButton);
+        
+        listBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(listBox);
+        
+        clearPreviousOptionBox();
+        
+        // When list by group is pressed
+        listButton.setOnAction(event -> {
+        	// get num input
+        	String levelStr = levelInput.getText();
+        	String groupStr = groupInput.getText();
+        	try {
+        		// call list by group method
+				String list = databaseHelper.listArticlesByLevelAndGroup(levelStr, groupStr);
+				outputArea.appendText(list);
+				((VBox) outputArea.getParent()).getChildren().remove(listBox);
+				showUserOptions(currRole);
+			} catch (SQLException e) {
+				outputArea.appendText("error when calling list article\n");
+				e.printStackTrace();
+			} catch (Exception e) {
+				outputArea.appendText("error going back to article options\n");
+				e.printStackTrace();
+			}
+        });
+        
+        // when back is pressed
+        backButton.setOnAction(event -> {
+        	((VBox) outputArea.getParent()).getChildren().remove(listBox);
+            try {
+            	((VBox) outputArea.getParent()).getChildren().remove(listBox);
+				showUserOptions(currRole);
+			} catch (Exception e) {
+				outputArea.appendText("Error going back\n");
+				e.printStackTrace();
+			}  
+        });
+    }
+
+    /*********
+     * This is the method used to list an article in detail by sequence number.
+     * Exception handling takes care of any database errors
+     */
+    // FIXME: ENWNEWNENWENWNEWNENWENWENWENWNENWENWENWNE
+
+    private void listBySeqNum() throws Exception {
+        
+        // Create input fields for sequence number
+    	Label seqNum = new Label("Enter sequence number:");
+        TextField seqNumInput = new TextField();
+        // Buttons
+    	Button listButton = new Button("List article");
+    	Button backButton = new Button("Back");
+    	
+    	// Create a VBox for input fields
+        VBox listBox = new VBox(10, seqNum, seqNumInput, listButton, backButton);
+        
+        listBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(listBox);
+        
+        clearPreviousOptionBox();
+        
+        // When list by group is pressed
+        listButton.setOnAction(event -> {
+        	// get num input
+            int seqNumId = Integer.parseInt(seqNumInput.getText());
+        	try {
+        		// call list by group method
+				String list = databaseHelper.getFormattedArticleWithSeq(seqNumId);
+				outputArea.appendText(list);
+				((VBox) outputArea.getParent()).getChildren().remove(listBox);
+				showUserOptions(currRole);
+			} catch (SQLException e) {
+				outputArea.appendText("error when calling list article\n");
+				e.printStackTrace();
+			} catch (Exception e) {
+				outputArea.appendText("error going back to article options\n");
+				e.printStackTrace();
+			}
+        });
+        
+        // when back is pressed
+        backButton.setOnAction(event -> {
+        	((VBox) outputArea.getParent()).getChildren().remove(listBox);
+            try {
+            	((VBox) outputArea.getParent()).getChildren().remove(listBox);
+				showUserOptions(currRole);
+			} catch (Exception e) {
+				outputArea.appendText("Error going back\n");
+				e.printStackTrace();
+			}  
+        });
+    }
     /*********
      * This is the method used to view an article
      * Exception handling takes care of any database errors
@@ -1787,8 +2036,184 @@ public class Main extends Application {
 				e.printStackTrace();
 			}
         });
-    } 
+    }    
     
+    // method for sending a generic message 
+    // FIXME: ENWNEWNENWENWNEWNENWENWENWENWNENWENWENWNE
+
+    private void sendGenericMessage() {
+        // Label to prompt the user
+        Label promptLabel = new Label("Enter your question: ");
+        
+        // Text field for user input
+        TextField questionInput = new TextField();
+        
+        // Button to submit the question
+        Button submitButton = new Button("Submit");
+        Button backButton = new Button("Back");
+        
+        // VBox layout for the form
+        VBox messageBox = new VBox(10, promptLabel, questionInput, submitButton, backButton);
+        messageBox.setAlignment(Pos.CENTER);
+
+        // Add the form to the main output area (or container)
+        ((VBox) outputArea.getParent()).getChildren().add(messageBox);
+
+        // Clear any previous option boxes to show only the current one
+        clearPreviousOptionBox();
+        
+        // Set action for submit button
+        submitButton.setOnAction(event -> {
+            String question = questionInput.getText().trim();
+            
+            if (!question.isEmpty()) {
+                // Append the question to the output area and the list
+                outputArea.appendText("Entered question: " + question + "\n");
+                genericQuestions.add(question);
+                for (String question1 : genericQuestions) {
+                    System.out.println("Question: " + question1);
+                }
+
+                
+                // Clear the input box after submission
+                questionInput.clear();
+            } else {
+                outputArea.appendText("Please enter a valid question.\n");
+            }
+        });
+        backButton.setOnAction(event -> {
+            ((VBox) outputArea.getParent()).getChildren().remove(messageBox);
+            showUserOptions(currRole);  // Show options again when going back
+        });
+    }
     
-    
+    // method for sending a specific message
+    // FIXME: ENWNEWNENWENWNEWNENWENWENWENWNENWENWENWNE
+    private void sendSpecificMessage() {
+        // Label to prompt the user
+        Label promptLabel = new Label("Enter unavailable info: ");
+        
+        // Text field for user input
+        TextField questionInput = new TextField();
+        
+        // Button to submit the question
+        Button submitButton = new Button("Submit");
+        Button backButton = new Button("Back");
+        
+        // VBox layout for the form
+        VBox messageBox = new VBox(10, promptLabel, questionInput, submitButton, backButton);
+        messageBox.setAlignment(Pos.CENTER);
+
+        // Add the form to the main output area (or container)
+        ((VBox) outputArea.getParent()).getChildren().add(messageBox);
+
+        // Clear any previous option boxes to show only the current one
+        clearPreviousOptionBox();
+        
+        // Set action for submit button
+        submitButton.setOnAction(event -> {
+            String question = questionInput.getText().trim();
+            
+            if (!question.isEmpty()) {
+                // Append the question to the output area and the list
+                outputArea.appendText("Entered info: " + question + "\n");
+                specificQuestions.add(question);
+                for (String question1 : specificQuestions) {
+                    System.out.println("Question: " + question1);
+                }
+
+                
+                // Clear the input box after submission
+                questionInput.clear();
+            } else {
+                outputArea.appendText("Please enter a valid question.\n");
+            }
+        });
+        backButton.setOnAction(event -> {
+            ((VBox) outputArea.getParent()).getChildren().remove(messageBox);
+            showUserOptions(currRole);  // Show options again when going back
+        });
+    }
+
+    // article list function for students
+    // FIXME: ENWNEWNENWENWNEWNENWENWENWENWNENWENWENWNE
+    private void studentListArticles() {
+        // Labels and input fields for each search criterion
+        Label title = new Label("Select an option ");
+        
+        // Buttons
+        Button listByLevel = new Button("List articles by level");
+        Button listByGroup = new Button("List articles by group");
+        Button listById = new Button("List articles by unique long identifier");
+        Button listByLevelAndGroup = new Button("List articles by level and group");
+        Button viewWithSeqNum = new Button("View article in detail using sequence number");
+
+        Button backButton = new Button("Back");
+
+        // Create a VBox for input fields and buttons
+        VBox listBox = new VBox(10, title, listByLevel, listByGroup, listById, listByLevelAndGroup, viewWithSeqNum, backButton);
+        listBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(listBox);
+
+        clearPreviousOptionBox();
+
+        // When list button is pressed
+        listByLevel.setOnAction(event -> {
+        	try {
+        		((VBox) outputArea.getParent()).getChildren().remove(listBox);
+				listByLevel();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+        });
+
+		listByGroup.setOnAction(event -> {
+			try {
+				((VBox) outputArea.getParent()).getChildren().remove(listBox);
+				listByGroup();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		});
+		listById.setOnAction(event -> {
+			try {
+				((VBox) outputArea.getParent()).getChildren().remove(listBox);
+				listByUniqueLongId();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		});
+		listByLevelAndGroup.setOnAction(event -> {
+			try {
+				((VBox) outputArea.getParent()).getChildren().remove(listBox);
+				listByLevelAndGroup();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		});
+		viewWithSeqNum.setOnAction(event -> {
+			try {
+				((VBox) outputArea.getParent()).getChildren().remove(listBox);
+				listBySeqNum();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		});
+        // When back button is pressed
+        backButton.setOnAction(event -> {
+            ((VBox) outputArea.getParent()).getChildren().remove(listBox);
+            try {
+                articleOptions();
+            } catch (Exception e) {
+                outputArea.appendText("Error going back\n");
+                e.printStackTrace();
+            }
+        });
+    }
+
 }

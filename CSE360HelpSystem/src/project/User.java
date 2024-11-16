@@ -3,6 +3,9 @@ package project;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Map;
+import java.util.Optional;
+import java.util.HashMap;
 
 
 /*******
@@ -29,6 +32,12 @@ public class User {
     private String preferredName;
     private Set<Role> roles;  // Set of roles for the user
     private Set<TopicProficiency> topicProficiencies;  // Set of topic proficiencies
+    private Map<String, Set<String>> specialAccessGroups;
+    
+    public User() {
+        // Initialize the specialAccessGroups map to prevent NullPointerException
+        this.specialAccessGroups = new HashMap<>();
+    }
 
     // Enum for system-recognized topics and proficiency levels
     public enum Proficiency {
@@ -60,6 +69,13 @@ public class User {
 
         public void setProficiency(Proficiency proficiency) {
             this.proficiency = proficiency;
+        }
+
+        // Check if user has access to a specific article in a group
+        public boolean hasAccessToArticle(String group, String articleId) {
+            return Optional.ofNullable(specialAccessGroups.get(group))
+                           .map(articles -> articles.contains(articleId))
+                           .orElse(false);
         }
     }
 
@@ -218,23 +234,49 @@ public class User {
         return roles;
     }
 
-
-    // Nested class for full name
-    public static class Name {
-        private String firstName;
-        private String middleName;
-        private String lastName;
-        private String preferredName;
-        //initial constructor for Name class
-        public Name(String firstName, String middleName, String lastName, String preferredName) {
-            this.firstName = firstName;
-            this.middleName = middleName;
-            this.lastName = lastName;
-            this.preferredName = preferredName;
+    public String getSpecialAccessGroups() {
+        if (specialAccessGroups == null || specialAccessGroups.isEmpty()) {
+            return "No special access groups assigned.";
         }
-        // return user' full name
-        public String getFullName() {
-            return preferredName != null ? preferredName : firstName + " " + middleName + " " + lastName;
+        
+        StringBuilder result = new StringBuilder("Special Access Groups:\n");
+        specialAccessGroups.forEach((group, articles) -> {
+            result.append("Group: ").append(group).append("\n");
+            result.append("Articles: ");
+            
+            if (articles.isEmpty()) {
+                result.append("No articles\n");
+            } else {
+                articles.forEach(article -> result.append(article).append(" "));
+                result.append("\n");
+            }
+        });
+        return result.toString();
+    }
+
+	// Remove user's access to a specific article in a special access group
+	public boolean removeSpecialAccessGroup(String group) {
+	    // Check if the group exists and then remove it
+	    if (specialAccessGroups.containsKey(group)) {
+	        specialAccessGroups.remove(group);
+	        return true;  // Indicate successful removal
+	    }
+	    return false;  // Indicate that the group was not found
+	}
+
+	public void addSpecialAccessGroup(String group) {
+	    specialAccessGroups.computeIfAbsent(group, k -> new HashSet<>());
+	}
+	
+	// List all special access groups and their associated articles
+    public void listSpecialAccessGroups() {
+        if (specialAccessGroups == null) {
+            System.out.println("specialAccessGroups is null");
+        } else {
+            specialAccessGroups.forEach((group, articles) -> {
+                System.out.println("Group: " + group);
+                articles.forEach(article -> System.out.println(" - Article ID: " + article));
+            });
         }
     }
 }

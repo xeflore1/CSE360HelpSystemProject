@@ -7,8 +7,10 @@ import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -482,9 +484,7 @@ class DatabaseHelper {
     	else {
     		System.out.print("article already exists");
     	}
-	}
-
-    
+	}   
 	
     /*********
      * This is the method used to clear the char array
@@ -516,14 +516,24 @@ class DatabaseHelper {
     }
 
     /*********
+
      * This is the method used to list the articles by group
      * Exception handling takes care of any database errors
      * 
      * @param groupId 			string of groupId
      * @return articleList 		string of article list
      */
+    // FIXME: ENWNEWNENWENWNEWNENWENWENWENWNENWENWENWNE
+
     public String listArticlesByGroup(String groupId) throws SQLException {
-        // Use LIKE to find articles that contain the specified groupId
+    	
+    	// case if user enters all or nothing
+    	if (groupId.equals("all") || groupId.equals("")) {
+        	System.out.println("aaaaaahahhahah");
+    		return listArticles();
+        }
+    	
+    	// Use LIKE to find articles that contain the specified groupId
         String query = "SELECT * FROM help_articles WHERE groupId LIKE ?";
         StringBuilder articlesList = new StringBuilder("Articles in Group [").append(groupId).append("]:\n");
         
@@ -537,10 +547,12 @@ class DatabaseHelper {
             boolean hasArticles = false;
             
             while (rs.next()) {
-                hasArticles = true;  // Set to true if at least one article is found
-                articlesList.append("[").append(rs.getInt("id")).append("] ")
+                hasArticles = true;  
+                // Append article details in short form
+                articlesList.append(rs.getInt("id")).append(". ")
                             .append(rs.getString("title")).append(" by ")
-                            .append(rs.getString("authors")).append("\n");
+                            .append(rs.getString("authors")).append("\n")
+                            .append("Abstract: ").append(rs.getString("abstract")).append("\n\n");
             }
             
             if (!hasArticles) {
@@ -554,6 +566,176 @@ class DatabaseHelper {
         return articlesList.toString();
     }
 
+    
+    /*********
+
+     * This is the method used to list the articles by level
+     * Exception handling takes care of any database errors
+     * 
+     * @param levelId 			string of levelId
+     * @return articleList 		string of article list
+     */
+    // FIXME: ENWNEWNENWENWNEWNENWENWENWENWNENWENWENWNE
+
+    public String listArticlesByLevel(String level) throws SQLException {
+       
+    	// case if all or nothing was entered
+    	if (level.equals("all") || level.equals("")) {
+        	System.out.println("aaaaaahahhahah");
+    		return listArticles();
+        }
+    	
+    	// Use LIKE to find articles that contain the specified groupId
+        String query = "SELECT * FROM help_articles WHERE level LIKE ?";
+        StringBuilder articlesList = new StringBuilder("Articles with level [").append(level).append("]:\n");
+        
+        // Prepare the wildcard pattern for the LIKE clause
+        String likeLevel = "%" + level + "%"; // For example: "%java%"
+
+        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+            pstmt.setString(1, likeLevel);  // Set the level parameter with wildcard
+            
+            ResultSet rs = pstmt.executeQuery();
+            boolean hasArticles = false;
+            
+            while (rs.next()) {
+                hasArticles = true;  
+                // Append article details in short form
+                articlesList.append(rs.getInt("id")).append(". ")
+                            .append(rs.getString("title")).append(" by ")
+                            .append(rs.getString("authors")).append("\n")
+                            .append("Abstract: ").append(rs.getString("abstract")).append("\n\n");
+            }
+            
+            if (!hasArticles) {
+                articlesList.append("No articles found with specified level.\n");
+            }
+        } catch (SQLException e) {
+            System.out.println("Error listing articles by level: " + e.getMessage());
+            throw e;  // Re-throw the exception to handle it elsewhere if needed
+        }
+        
+        return articlesList.toString();
+    }
+    /*********
+     * This is the method used to list the articles by unique long id
+     * Exception handling takes care of any database errors
+     * 
+     * @param id 			long of id
+     * @return articleList 		string of article list
+     */
+    // FIXME: ENWNEWNENWENWNEWNENWENWENWENWNENWENWENWNE
+
+    public String listArticlesByUniqueLongId(long id) throws SQLException {
+        
+    	if (id == 0) {
+        	System.out.println("aaaaaahahhahah");
+    		return listArticles();
+        }
+    	
+    	// Use LIKE to find articles that contain the specified groupId
+        String query = "SELECT * FROM help_articles WHERE unique_id LIKE ?";
+        StringBuilder articlesList = new StringBuilder("Article with unique id [").append(id).append("]:\n");
+        
+        // Prepare the wildcard pattern for the LIKE clause
+        String likeId = "%" + id + "%"; // For example: "%java%"
+
+        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+            pstmt.setString(1, likeId);  // Set the level parameter with wildcard
+            
+            ResultSet rs = pstmt.executeQuery();
+            boolean hasArticles = false;
+            
+            while (rs.next()) {
+                hasArticles = true;  
+                // Append article details in short form
+                articlesList.append(rs.getInt("id")).append(". ")
+                            .append(rs.getString("title")).append(" by ")
+                            .append(rs.getString("authors")).append("\n")
+                            .append("Abstract: ").append(rs.getString("abstract")).append("\n\n");
+            }
+            
+            if (!hasArticles) {
+                articlesList.append("No article found with specified id.\n");
+            }
+        } catch (SQLException e) {
+            System.out.println("Error listing articles by id: " + e.getMessage());
+            throw e;  // Re-throw the exception to handle it elsewhere if needed
+        }
+        
+        return articlesList.toString();
+    }
+    
+    /*********
+     * This is the method used to list the articles by level and group
+     * Exception handling takes care of any database errors
+     * 
+     * @param level 			String of level
+     * @param group 			String of group
+     * @return articleList 		string of article list
+     */
+    // FIXME: ENWNEWNENWENWNEWNENWENWENWENWNENWENWENWNE
+
+    public String listArticlesByLevelAndGroup(String level, String group) throws SQLException {
+        // If "all" or nothing was entered for level or group, adjust the query accordingly
+        boolean isAllLevels = level.equals("all") || level.isEmpty();
+        boolean isAllGroups = group.equals("all") || group.isEmpty();
+
+        // Build the base query with placeholders for dynamic criteria
+        StringBuilder queryBuilder = new StringBuilder("SELECT * FROM help_articles WHERE ");
+        
+        // Adjust query to include level and group conditions
+        if (!isAllLevels) {
+            queryBuilder.append("level LIKE ? ");
+        }
+        if (!isAllGroups) {
+            if (!isAllLevels) queryBuilder.append("AND ");
+            queryBuilder.append("groupId LIKE ? ");
+        }
+
+        String query = queryBuilder.toString();
+        StringBuilder articlesList = new StringBuilder("Articles in Group [").append(group).append("]:\n");
+        
+        // Prepare wildcards for the LIKE clause
+        String likeLevel = "%" + level + "%";
+        String likeGroup = "%" + group + "%";
+        
+        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+            int paramIndex = 1;
+            if (!isAllLevels) pstmt.setString(paramIndex++, likeLevel);
+            if (!isAllGroups) pstmt.setString(paramIndex++, likeGroup);
+            
+            ResultSet rs = pstmt.executeQuery();
+            
+            int articleNumber = 0;
+            boolean hasArticles = false;
+
+            while (rs.next()) {
+                hasArticles = true;
+                
+                // Append article details in short form
+                articlesList.append(rs.getInt("id")).append(". ")
+                            .append(rs.getString("title")).append(" by ")
+                            .append(rs.getString("authors")).append("\n")
+                            .append("Abstract: ").append(rs.getString("abstract")).append("\n\n");
+                articleNumber++;
+            }
+            
+            // Display the total number of matching articles
+            if (hasArticles) {
+                articlesList.append("Number of articles matching the criteria: ").append(articleNumber).append("\n");
+            } else {
+                articlesList.append("No articles found with the specified level and group.\n");
+            }
+        } catch (SQLException e) {
+            System.out.println("Error listing articles by level and group: " + e.getMessage());
+            throw e;
+        }
+
+        return articlesList.toString();
+    }
+
+    
     /*********
      * This is the method used to update the article
      * Exception handling takes care of any database errors
@@ -821,6 +1003,44 @@ class DatabaseHelper {
     }
 
     /*********
+     * This is the method used to get the formatted article given the sequence number
+     * Exception handling takes care of any database errors
+     * 
+     * @param seqNum 		 sequence number of article
+     */
+    // FIXME: ENWNEWNENWENWNEWNENWENWENWENWNENWENWENWNE
+
+    public String getFormattedArticleWithSeq(int seqNum) throws SQLException {
+        StringBuilder formattedArticle = new StringBuilder();
+        String query = "SELECT * FROM help_articles WHERE id = ?";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+            pstmt.setInt(1, seqNum);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                // Add article details to the StringBuilder
+                formattedArticle.append("****Article Details****").append("\n")
+                				.append("Title: ").append(rs.getString("title")).append("\n")
+                                .append("Authors: ").append(rs.getString("authors")).append("\n")
+                                .append("Level: ").append(rs.getString("level")).append("\n")
+                                .append("Group ID: ").append(rs.getString("groupId")).append("\n")
+                                .append("Abstract: ").append(rs.getString("abstract")).append("\n")
+                                .append("Keywords: ").append(rs.getString("keywords")).append("\n")
+                                .append("Body:\n").append(rs.getString("body")).append("\n")
+                                .append("References:\n").append(rs.getString("references")).append("\n")
+                				.append("***********************").append("\n");
+            } else {
+                return "No article found with the specified title and author.";
+            }
+        } catch (SQLException e) {
+            System.out.println("Error retrieving article: " + e.getMessage());
+            throw e;
+        }
+
+        return formattedArticle.toString(); // Return the formatted article string
+    }
+    /*********
      * This is the method used to clear all memory of articles
      * Exception handling takes care of any database errors
      * 
@@ -847,5 +1067,4 @@ class DatabaseHelper {
 			se.printStackTrace(); 
 		} 
 	}
-
 }

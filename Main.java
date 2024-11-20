@@ -2368,7 +2368,7 @@ public class Main extends Application {
         Button viewGroup = new Button("View Special Access Group");
         Button editGroup = new Button("Edit a Special Access Group");
         Button articeGroup = new Button("Add article to a Special Access Group");
-        Button deleteGroup = new Button("Delete Special Access Group");
+        Button deleteGroup = new Button("Delete article from Special Access Group");
         Button backupGroup = new Button("Backup Special Access Group");
         Button restoreGroup = new Button("Restore Special Access Group");
         Button back = new Button("Back");
@@ -2725,13 +2725,14 @@ public class Main extends Application {
 		        	String username = usernameInput.getText();
 		        	User user = getUser(firstName, username);
 		        	String permissions = "";
+		        	boolean check = false;
 		        	// check if user exists
 		        	if (user != null) {
 		        		String selectedGroup = "";
 			            if (listToggleGroup.getSelectedToggle() == adminListButton && (user.hasRole(Role.ADMIN))) {
 			            	permissions = "Admins";
 			            	// logic to add user to admins, first clear inputs
-			                group.addToAdmins(user);
+			                check = group.addToAdmins(user);
 			                groupNameInput.clear();
 			                firstNameInput.clear();
 			                usernameInput.clear();
@@ -2739,7 +2740,7 @@ public class Main extends Application {
 			            } else if (listToggleGroup.getSelectedToggle() == instructorsAccessButton && (user.hasRole(Role.INSTRUCTOR))) {
 			            	permissions = "Instructors with article access";
 			            	// logic to add user to instructorsWithAccess
-			            	group.addToInstrWithAccess(user);
+			            	check = group.addToInstrWithAccess(user);
 			            	groupNameInput.clear();
 			                firstNameInput.clear();
 			                usernameInput.clear();
@@ -2747,7 +2748,7 @@ public class Main extends Application {
 			            } else if (listToggleGroup.getSelectedToggle() == instructorsAdminButton && (user.hasRole(Role.INSTRUCTOR))) {
 			            	permissions = "Instructors with admin permissions";
 			            	// logic to add user to instructorsWithAdminRights
-			            	group.addToInstrWithAdminRights(user);
+			            	check = group.addToInstrWithAdminRights(user);
 			            	groupNameInput.clear();
 			                firstNameInput.clear();
 			                usernameInput.clear();
@@ -2755,7 +2756,7 @@ public class Main extends Application {
 			            } else if (listToggleGroup.getSelectedToggle() == studentListButton && (user.hasRole(Role.STUDENT))) {
 			            	permissions = "Students";
 			            	// Add logic to add user to studentsWithViewingRights
-			            	group.addToStudentList(user);
+			            	check = group.addToStudentList(user);
 			            	groupNameInput.clear();
 			                firstNameInput.clear();
 			                usernameInput.clear();
@@ -2764,8 +2765,14 @@ public class Main extends Application {
 			                outputArea.appendText("Invalid credentials.\n");
 			                return;
 			            }
-			            outputArea.appendText("User: \"" + username + "\" added to special access group: \"" + groupName +
-			            		"\" with permissions: \"" + permissions + "\".\n");
+			            if (check) {
+				            outputArea.appendText("User: \"" + username + "\" added to special access group: \"" + groupName +
+				            		"\" with permissions: \"" + permissions + "\".\n");
+			            }
+			            else {
+			            	outputArea.appendText("User: \"" + username + "\" already exists in special access group: \"" + groupName +
+				            		"\" with permissions: \"" + permissions + "\".\n");
+			            }
 		        	}
 		        	else {
 		        		outputArea.appendText("Invalid user\n");
@@ -2804,7 +2811,6 @@ public class Main extends Application {
 		        	String permissions = "";
 		        	// check if user exists
 		        	if (user != null) {
-		        		String selectedGroup = "";
 			            if (listToggleGroup.getSelectedToggle() == adminListButton && group.doesAdminExist(user)) {
 			            	permissions = "Admin group";
 			            	// logic to remove user from admins, first clear inputs
@@ -2820,7 +2826,6 @@ public class Main extends Application {
 			                groupNameInput.clear();
 			                firstNameInput.clear();
 			                usernameInput.clear();
-			            	group.addToInstrWithAccess(user);
 			                outputArea.appendText("User removed from Instructors with Article Access\n");
 			            } else if (listToggleGroup.getSelectedToggle() == instructorsAdminButton && group.doesInstrExistInAdminRightsList(user)) {
 			            	permissions = "Instructors with admin permissions";
@@ -2829,7 +2834,6 @@ public class Main extends Application {
 			                groupNameInput.clear();
 			                firstNameInput.clear();
 			                usernameInput.clear();
-			            	group.addToInstrWithAdminRights(user);
 			                outputArea.appendText("User removed from Instructors with Admin Privileges\n");
 			            } else if (listToggleGroup.getSelectedToggle() == studentListButton && group.doesStudentExistInStudentList(user)) {
 			            	permissions = "Student list";
@@ -2838,7 +2842,6 @@ public class Main extends Application {
 			                groupNameInput.clear();
 			                firstNameInput.clear();
 			                usernameInput.clear();
-			            	group.addToStudentList(user);
 			                outputArea.appendText("User removed from Student List\n");
 			            } else {
 			                outputArea.appendText("Invalid credentials.\n");
@@ -2929,10 +2932,16 @@ public class Main extends Application {
             if (group != null) {
             	// if article is valid
             	if (uniqueId != -1) {
-            		group.addToArticles(uniqueId);
+            		boolean check = group.addToArticles(uniqueId);
             		groupNameInput.clear();
             		seqNumberInput.clear();
-            		outputArea.appendText("Article successfully added to \"" + groupName + "\".\n");
+            		// article was successfully added
+            		if (check) {
+            			outputArea.appendText("Article successfully added to \"" + groupName + "\".\n");
+            		}
+            		else {
+            			outputArea.appendText("Article doesn't exist in \"" + groupName + "\".\n");
+            		}
             	}
             	else {
             		outputArea.appendText("Invalid article.\n");
@@ -2965,7 +2974,7 @@ public class Main extends Application {
         ((VBox) outputArea.getParent()).getChildren().add(optionBox);
     }
     
- // method to add an article to a special access group
+    // method to add an article to a special access group
     // FIXME: ENWNEWNENWENWENWENWNEWNENWENW
     private void removeArticleFromSpecialAccessGroup() {
         outputArea.appendText("Remove Article from Special Access Group\n");
@@ -3005,14 +3014,19 @@ public class Main extends Application {
             if (group != null) {
             	// if article is valid
             	if (uniqueId != -1) {
-            		group.removeFromArticles(uniqueId);
+            		boolean check = group.removeFromArticles(uniqueId);
             		List<Long> temp = group.getArticles();
             		for (Long i : temp) {
             			System.out.println(i);
             		}
             		groupNameInput.clear();
             		seqNumberInput.clear();
-            		outputArea.appendText("Article successfully removed from \"" + groupName + "\".\n");
+            		if (check) {
+            			outputArea.appendText("Article successfully removed from \"" + groupName + "\".\n");
+            		}
+            		else {
+            			outputArea.appendText("Article doesn't exist in \"" + groupName + "\".\n");
+            		}
             	}
             	else {
             		outputArea.appendText("Invalid article.\n");

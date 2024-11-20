@@ -1055,7 +1055,27 @@ class DatabaseHelper {
      * Exception handling takes care of any database errors
      * 
      */
-	public void closeConnection() {
+	
+    // method used in adding articles to special access groups
+    // returns an articles unique id given seq num
+    public long getUniqueIdById(int id) {
+        String query = "SELECT unique_id FROM help_articles WHERE id = ?";
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setInt(1, id);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getLong("unique_id");
+                } else {
+                    System.out.println("Article with ID " + id + " not found.");
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return -1; // Return -1 if the article is not found or an error occurs
+    }
+    
+    public void closeConnection() {
 		try{ 
 			if(statement!=null) statement.close(); 
 		} catch(SQLException se2) { 

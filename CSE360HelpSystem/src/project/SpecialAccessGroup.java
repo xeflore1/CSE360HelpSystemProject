@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 // FIXME TEST IF FUNCITONS WORK
 public class SpecialAccessGroup {
+	private static List<SpecialAccessGroup> allGroups = new ArrayList<>();
     private String groupName;
     private List<Long> articles; // Articles with encrypted bodies, long represents the unique id of an article
     private List<User> admins;      // Admins with admin rights for this group, cant view decrypted articles
@@ -19,8 +20,13 @@ public class SpecialAccessGroup {
         this.instructorsWithAccess = new ArrayList<>();
         this.instructorsWithAdminRights = new ArrayList<>();
         this.studentsWithViewingRights = new ArrayList<>();
+        allGroups.add(this);
     }
 
+    public static List<SpecialAccessGroup> getAllGroups() {
+        return allGroups;
+    }
+    
     // GROUP METHODS
     public String getGroupName() {
         return groupName;

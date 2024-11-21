@@ -22,6 +22,7 @@ import java.util.HashMap;
 public class User {
     private String username;
     private char[] password;  // Non-string data type for password
+    private long id;
     private boolean isOneTimePassword;  // Flag for one-time password
     private String oneTimePassword;
     private LocalDateTime otpExpiry;  // Date and time when the one-time password expires
@@ -37,6 +38,7 @@ public class User {
     public User() {
         // Initialize the specialAccessGroups map to prevent NullPointerException
         this.specialAccessGroups = new HashMap<>();
+        this.id = id;
     }
 
     // Enum for system-recognized topics and proficiency levels
@@ -164,6 +166,14 @@ public class User {
 
     public void setPassword(char[] password) {
         this.password = password;
+    }
+    
+    public long getId() {
+        return id;
+    }
+    
+    public void setId(long id) {
+    	this.id = id;
     }
 
     public boolean isOneTimePassword() {

@@ -55,6 +55,7 @@ public class Main extends Application {
     private static List<String> genericQuestions = new ArrayList<>(); // list of generic questions
     private static List<String> specificQuestions = new ArrayList<>(); // list of specific questions
     private static List<SpecialAccessGroup> specialAccessGroupsList = new ArrayList<>(); // list of special access groups
+    private static List<String> generalArticleGroupsList = new ArrayList<>();
 
 
 
@@ -314,6 +315,7 @@ public class Main extends Application {
         Button quitButton = new Button("Quit");
 	    Button manageStudentsButton = new Button("Manage Students");
         Button aritcleButton = new Button("Article settings");
+        Button generalArticleOptions = new Button("General article group options");
         
 
         // Add admin options only if the current user is an admin
@@ -348,6 +350,7 @@ public class Main extends Application {
                 addOrRemoveRole,
                 resetUserButton,
                 aritcleButton,
+                generalArticleOptions,
                 quitButton
             );
         } 
@@ -358,6 +361,7 @@ public class Main extends Application {
         	optionBox.getChildren().addAll(
                     new Label("Select an option:"),
                     aritcleButton,
+                    generalArticleOptions,
                     specialAccessGroups,
                     manageStudentsButton,
                     signOutButton,
@@ -372,6 +376,10 @@ public class Main extends Application {
 					e1.printStackTrace();
 				}
 			}); 
+        	
+        	generalArticleOptions.setOnAction(e -> {
+        		generalArticleGroupOptions();
+        	}); 
             
         	manageStudentsButton.setOnAction(e -> manageStudents());
         	
@@ -1456,18 +1464,32 @@ public class Main extends Application {
             showUserOptions(currRole);  // Show options again when going back
         });
         
-        optionBox.getChildren().addAll(
-            new Label("Select an option:"),
-            listArticles,
-            listArticlesByGroup,
-            viewArticle,
-            createArticles,
-            updateArticle,
-            deleteArticles,
-            backupArticles,
-            restoreArticles,
-            back
-        );
+        if (currRole == Role.ADMIN) {
+        	optionBox.getChildren().addAll(
+                    new Label("Select an option:"),
+                    listArticles,
+                    listArticlesByGroup,
+                    createArticles,
+                    deleteArticles,
+                    backupArticles,
+                    restoreArticles,
+                    back
+                );
+        }
+        else {
+	        optionBox.getChildren().addAll(
+	            new Label("Select an option:"),
+	            listArticles,
+	            listArticlesByGroup,
+	            viewArticle,
+	            createArticles,
+	            updateArticle,
+	            deleteArticles,
+	            backupArticles,
+	            restoreArticles,
+	            back
+	        );
+        }
         
         optionBox.setAlignment(Pos.CENTER);
         ((VBox) outputArea.getParent()).getChildren().add(optionBox);
@@ -2367,8 +2389,9 @@ public class Main extends Application {
         Button createGroup = new Button("Create Special Access Group");
         Button viewGroup = new Button("View Special Access Group");
         Button editGroup = new Button("Edit a Special Access Group");
+        Button deleteGroup = new Button ("Delete a Special Access Group");
         Button articeGroup = new Button("Add article to a Special Access Group");
-        Button deleteGroup = new Button("Delete article from Special Access Group");
+        Button deleteArticle = new Button("Delete article from Special Access Group");
         Button backupGroup = new Button("Backup Special Access Group");
         Button restoreGroup = new Button("Restore Special Access Group");
         Button printGroups = new Button("Print All Special Access Groups"); // New button
@@ -2384,10 +2407,13 @@ public class Main extends Application {
         editGroup.setOnAction(e -> {
         	editSpecialAccessGroup();
 		});
+        deleteGroup.setOnAction(e -> {
+			deleteSpecialAccessGroup();
+		});
         articeGroup.setOnAction(e -> {
         	addArticleToSpecialAccessGroup();
         });
-		deleteGroup.setOnAction(e -> {
+		deleteArticle.setOnAction(e -> {
 			removeArticleFromSpecialAccessGroup();
 		});
 		printGroups.setOnAction(e -> { 
@@ -2405,8 +2431,9 @@ public class Main extends Application {
 	            createGroup,
 	            viewGroup,
 	            editGroup,
-	            articeGroup,
 	            deleteGroup,
+	            articeGroup,
+	            deleteArticle,
 	            printGroups,
 	            back
 	        );
@@ -2426,9 +2453,18 @@ public class Main extends Application {
     // method to print all created special access groups
     private void printSpecialAccessGroups() {
         outputArea.appendText("All Special Access Groups:\n");
-        List<SpecialAccessGroup> groups = SpecialAccessGroup.getAllGroups();
-        for (SpecialAccessGroup group : groups) {
-            outputArea.appendText(group.getGroupName() + "\n");
+
+        try {
+            List<String> groups = databaseHelper.getAllSpecialAccessGroups();
+            if (groups.isEmpty()) {
+                outputArea.appendText("No special access groups found.\n");
+            } else {
+                for (String group : groups) {
+                    outputArea.appendText(group + "\n");
+                }
+            }
+        } catch (SQLException e) {
+            outputArea.appendText("Error retrieving special access groups: " + e.getMessage() + "\n");
         }
     }
 
@@ -2436,56 +2472,77 @@ public class Main extends Application {
     // method to create a special access group
     // FIXME: ENWNEWNENWENWENWENWNEWNENWENW
     private void createSpecialAccessGroup() {
-    	outputArea.appendText("Enter name for new Special Access Group\n");
-    	
-    	clearPreviousOptionBox();  // Ensure only one options box is visible
-        // Clear the optionBox before adding new options
-        optionBox.getChildren().clear();
-        // Labels
+        outputArea.appendText("Enter name for new Special Access Group\n");
+
+        clearPreviousOptionBox();  // Ensure only one options box is visible
+        optionBox.getChildren().clear();  // Clear the optionBox before adding new options
+
+        // Labels and text fields
         Label name = new Label("Name");
         TextField nameInput = new TextField();
-        // Buttons 
+        
+        // Buttons
         Button createGroup = new Button("Create");
         Button back = new Button("Back");
-        
+
+        // Define lists of users and articles
+        List<Long> articles = new ArrayList<>();  // You will need to collect these articles from somewhere
+        List<User> admins = new ArrayList<>();  // Add the users you want to assign as admins
+        List<User> instructorsWithAccess = new ArrayList<>();  // Add instructors with access
+        List<User> instructorsWithAdminRights = new ArrayList<>();  // Add instructors with admin rights
+        List<User> studentsWithViewingRights = new ArrayList<>();  // Add students with viewing rights
+
         createGroup.setOnAction(e -> {
-        	String groupName = nameInput.getText();
-        	nameInput.clear();
-        	// create newGroup
-        	SpecialAccessGroup newGroup = new SpecialAccessGroup(groupName);
-        	// first instructor to be added, give viewing and admin privliges 
-        	if (currRole == Role.INSTRUCTOR) {
-        		newGroup.addToInstrWithAccess(currentUser);
-        		newGroup.addToInstrWithAdminRights(currentUser);
-        	}
-        	// add to list
-        	specialAccessGroupsList.add(newGroup);
-        	/*for (SpecialAccessGroup p : specialAccessGroupsList) {
-        		if (p.getGroupName().equals(newGroup.getGroupName())) {
-                	outputArea.appendText("Group: \"" + groupName + "\" successfully created\n");
-        		}
-        	}   */     	
-        	outputArea.appendText("Group: \"" + groupName + "\" successfully created\n");
+            String groupName = nameInput.getText();
+            nameInput.clear();
+
+            // Check if the group name is not empty
+            if (groupName.isEmpty()) {
+                outputArea.appendText("Group name cannot be empty.\n");
+                return;
+            }
+
+            // Assign initial roles based on the current user role
+            if (currRole == Role.INSTRUCTOR) {
+                // Add current user to instructors with access and admin rights
+                instructorsWithAccess.add(currentUser);
+                instructorsWithAdminRights.add(currentUser);
+            }
+
+            try {
+                // Call the database helper method to create the special access group
+                databaseHelper.createSpecialAccessGroup(groupName, articles, admins,
+                        instructorsWithAccess, instructorsWithAdminRights, studentsWithViewingRights);
+
+                outputArea.appendText("Group: \"" + groupName + "\" successfully created and saved to database.\n");
+
+            } catch (SQLException ex) {
+                outputArea.appendText("Error creating Special Access Group: " + ex.getMessage() + "\n");
+            }
+
+            // Optionally, add the new group to an in-memory list if needed
+            // specialAccessGroupsList.add(newGroup);  // Uncomment if needed
 
         });
+
         back.setOnAction(e -> {
-        	try {
-				specialAccessGroupOptions();
-			} catch (Exception e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}  // Show options again when going back
+            try {
+                specialAccessGroupOptions();  // Go back to the previous options screen
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
         });
-        
+
         optionBox.getChildren().addAll(
-        	name, 
-        	nameInput, 
-        	createGroup, 
-        	back
+            name, 
+            nameInput, 
+            createGroup, 
+            back
         );
         optionBox.setAlignment(Pos.CENTER);
-        ((VBox) outputArea.getParent()).getChildren().add(optionBox);  
+        ((VBox) outputArea.getParent()).getChildren().add(optionBox);
     }
+    
     // method to view a special access group
     // FIXME: ENWNEWNENWENWENWENWNEWNENWENW finish actual viewing stuff
     private void viewSpecialAccessGroup() {
@@ -2684,6 +2741,7 @@ public class Main extends Application {
         optionBox.setAlignment(Pos.CENTER);
         ((VBox) outputArea.getParent()).getChildren().add(optionBox);  
     }
+    
     // method to edit a special access group
     // FIXME: ENWNEWNENWENWENWENWNEWNENWENW
     private void editSpecialAccessGroup() {
@@ -2907,6 +2965,59 @@ public class Main extends Application {
         ((VBox) outputArea.getParent()).getChildren().add(optionBox);
     }
     
+    private void deleteSpecialAccessGroup() {
+        outputArea.appendText("Enter the name of the Special Access Group to delete\n");
+
+        clearPreviousOptionBox();  // Ensure only one options box is visible
+        optionBox.getChildren().clear();  // Clear the optionBox before adding new options
+
+        // Labels and text fields
+        Label nameLabel = new Label("Name");
+        TextField nameInput = new TextField();
+
+        // Buttons
+        Button deleteGroupButton = new Button("Delete");
+        Button backButton = new Button("Back");
+
+        deleteGroupButton.setOnAction(e -> {
+            String groupName = nameInput.getText();
+            nameInput.clear();
+
+            // Check if the group name is not empty
+            if (groupName.isEmpty()) {
+                outputArea.appendText("Group name cannot be empty.\n");
+                return;
+            }
+
+            try {
+                // Call the database helper method to delete the special access group
+                databaseHelper.deleteSpecialAccessGroup(groupName);
+
+                outputArea.appendText("Group: \"" + groupName + "\" successfully deleted from the database.\n");
+
+            } catch (SQLException ex) {
+                outputArea.appendText("Error deleting Special Access Group: " + ex.getMessage() + "\n");
+            }
+        });
+
+        backButton.setOnAction(e -> {
+            try {
+                specialAccessGroupOptions();  // Go back to the previous options screen
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        optionBox.getChildren().addAll(
+            nameLabel,
+            nameInput,
+            deleteGroupButton,
+            backButton
+        );
+        optionBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(optionBox);
+    }
+    
     // method to add an article to a special access group
     // FIXME: ENWNEWNENWENWENWENWNEWNENWENW
     private void addArticleToSpecialAccessGroup() {
@@ -3072,6 +3183,339 @@ public class Main extends Application {
             backButton
         );
         
+        optionBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(optionBox);
+    }
+	
+    // method for general article group options
+    private void generalArticleGroupOptions() {
+    	outputArea.appendText("Select an option\n");
+        
+    	clearPreviousOptionBox();  // Ensure only one options box is visible
+        // Clear the optionBox before adding new options
+        optionBox.getChildren().clear();
+        
+        // All choices for article settings
+        Button createGroup = new Button("Create General article group");
+        Button viewGroup = new Button("View General article group");
+        Button editGroup = new Button("Edit a Special Access Group");
+        Button articeGroup = new Button("Add article to a Special Access Group");
+        Button deleteGroup = new Button("Delete General article group");
+        Button backupGroup = new Button("Backup Special Access Group");
+        Button restoreGroup = new Button("Restore Special Access Group");
+        Button printGroups = new Button("Print All Special Access Groups"); // New button
+        Button back = new Button("Back");
+        
+        // Set button actions
+        createGroup.setOnAction(e -> {
+        	createGeneralArticleGroup();
+		});
+        viewGroup.setOnAction(e -> {
+        	viewGeneralArticleGroup();
+		});
+        editGroup.setOnAction(e -> {
+        	editGeneralArticleGroup();
+		});
+        articeGroup.setOnAction(e -> {
+        	addArticleToSpecialAccessGroup();
+        });
+		deleteGroup.setOnAction(e -> {
+			deleteGeneralArticleGroup();
+		});
+		printGroups.setOnAction(e -> { 
+			printSpecialAccessGroups();
+		});
+       
+        back.setOnAction(e -> {
+        	//((VBox) outputArea.getParent()).getChildren().remove(deleteBox);
+            showUserOptions(currRole);  // Show options again when going back
+        });
+        
+        if (currRole == Role.INSTRUCTOR) {
+	        optionBox.getChildren().addAll(
+	            new Label("Select an option:"),
+	            createGroup,
+	            viewGroup,
+	            editGroup,
+	            deleteGroup,
+	            back
+	        );
+        }
+        else if (currRole == Role.ADMIN) {
+	        optionBox.getChildren().addAll(
+	            new Label("Select an option:"),
+	            editGroup,
+	            back
+	        );
+        }
+        
+        optionBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(optionBox);
+    }
+    
+    private void createGeneralArticleGroup() {
+    	outputArea.appendText("Enter name for new General article group\n");
+    	
+    	clearPreviousOptionBox();  // Ensure only one options box is visible
+        // Clear the optionBox before adding new options
+        optionBox.getChildren().clear();
+        // Labels
+        Label name = new Label("Name");
+        TextField nameInput = new TextField();
+        // Buttons 
+        Button createGroup = new Button("Create");
+        Button back = new Button("Back");
+        
+        createGroup.setOnAction(e -> {
+        	String groupName = nameInput.getText();
+        	nameInput.clear();
+        	generalArticleGroupsList.add(groupName);   	
+        	for (String s : generalArticleGroupsList) {
+        		System.out.println("group: " + s);
+        	}
+        	outputArea.appendText("Group: \"" + groupName + "\" successfully created\n");
+
+        });
+        
+        back.setOnAction(e -> {
+        	try {
+        		generalArticleGroupOptions();
+			} catch (Exception e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}  // Show options again when going back
+        });
+        
+        optionBox.getChildren().addAll(
+        	name, 
+        	nameInput, 
+        	createGroup, 
+        	back
+        );
+        optionBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(optionBox);
+    }
+
+    // method to view general article groups
+    private void viewGeneralArticleGroup() {
+    	outputArea.appendText("Enter name of general article group to view\n");
+    	
+    	clearPreviousOptionBox();  // Ensure only one options box is visible
+        // Clear the optionBox before adding new options
+        optionBox.getChildren().clear();
+        // Labels
+        Label name = new Label("Name");
+        TextField nameInput = new TextField();
+        // Buttons 
+        Button viewGroup = new Button("View");
+        Button back = new Button("Back");
+        
+        viewGroup.setOnAction(e -> {
+        	String groupName = nameInput.getText();
+        	nameInput.clear();
+        	try {
+				String result = databaseHelper.listArticlesByGroup(groupName);
+				outputArea.appendText(result);
+			} catch (SQLException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+        });
+        
+        back.setOnAction(e -> {
+        	try {
+        		generalArticleGroupOptions();
+			} catch (Exception e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}  // Show options again when going back
+        });
+        
+        optionBox.getChildren().addAll(
+        	name, 
+        	nameInput, 
+        	viewGroup, 
+        	back
+        );
+        optionBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(optionBox);
+    }
+    
+    // method to edit general article groups
+    private void editGeneralArticleGroup() {
+    	outputArea.appendText("Enter name of general article group to edit\n");
+    	
+    	clearPreviousOptionBox();  // Ensure only one options box is visible
+        // Clear the optionBox before adding new options
+        optionBox.getChildren().clear();
+        // Labels
+        Label name = new Label("Group name");
+        TextField nameInput = new TextField();
+        // Buttons 
+        Button addArticle = new Button("Add article");
+        Button removeArticle = new Button("Remove article");
+        Button back = new Button("Back");
+        
+        addArticle.setOnAction(e -> {
+        	String groupName = nameInput.getText();
+        	nameInput.clear();
+        	addToGeneralArticle(groupName);
+        });
+        
+        removeArticle.setOnAction(e -> {
+        	String groupName = nameInput.getText();
+        	nameInput.clear();
+        	removeFromGeneralArticle(groupName);
+        });
+        
+        back.setOnAction(e -> {
+        	try {
+        		generalArticleGroupOptions();
+			} catch (Exception e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}  // Show options again when going back
+        });
+        
+        optionBox.getChildren().addAll(
+        	name, 
+        	nameInput, 
+        	addArticle, 
+        	removeArticle,
+        	back
+        );
+        optionBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(optionBox);
+    }
+    
+    // method to add to a general article
+    private void addToGeneralArticle(String group) {
+    	outputArea.appendText("Enter sequence number of article to add\n");
+    	
+    	clearPreviousOptionBox();  // Ensure only one options box is visible
+        // Clear the optionBox before adding new options
+        optionBox.getChildren().clear();
+        // Labels
+        Label seqNum = new Label("Sequence number");
+        TextField seqNumInput = new TextField();
+        // Buttons 
+        Button addArticle = new Button("Add");
+        Button back = new Button("Back");
+        
+        addArticle.setOnAction(e -> {
+        	int seq = Integer.parseInt(seqNumInput.getText());
+        	seqNumInput.clear();
+        	try {
+				databaseHelper.updateArticleGroupId(seq, group);
+			} catch (SQLException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+        });
+        
+        back.setOnAction(e -> {
+        	try {
+        		generalArticleGroupOptions();
+			} catch (Exception e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}  // Show options again when going back
+        });
+        
+        optionBox.getChildren().addAll(
+        	seqNum, 
+        	seqNumInput, 
+        	addArticle, 
+        	back
+        );
+        optionBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(optionBox);
+    }
+    
+    // method to delete from a general article
+    private void removeFromGeneralArticle(String group) {
+    	outputArea.appendText("Enter sequence number of article to delete\n");
+    	
+    	clearPreviousOptionBox();  // Ensure only one options box is visible
+        // Clear the optionBox before adding new options
+        optionBox.getChildren().clear();
+        // Labels
+        Label seqNum = new Label("Sequence number");
+        TextField seqNumInput = new TextField();
+        // Buttons 
+        Button addArticle = new Button("Delete");
+        Button back = new Button("Back");
+        
+        addArticle.setOnAction(e -> {
+        	int seq = Integer.parseInt(seqNumInput.getText());
+        	seqNumInput.clear();
+        	try {
+				databaseHelper.resetArticleGroupId(seq, group);
+			} catch (SQLException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+        });
+        
+        back.setOnAction(e -> {
+        	try {
+        		generalArticleGroupOptions();
+			} catch (Exception e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}  // Show options again when going back
+        });
+        
+        optionBox.getChildren().addAll(
+        	seqNum, 
+        	seqNumInput, 
+        	addArticle, 
+        	back
+        );
+        optionBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(optionBox);
+    }
+    
+    // method to delete general article group
+    private void deleteGeneralArticleGroup() {
+    	outputArea.appendText("Delete general article group\n");
+    	
+    	clearPreviousOptionBox();  // Ensure only one options box is visible
+        // Clear the optionBox before adding new options
+        optionBox.getChildren().clear();
+        // Labels
+        Label groupName = new Label("Enter group name to delete");
+        TextField groupNameInput = new TextField();
+        // Buttons 
+        Button deleteArticle = new Button("Delete");
+        Button back = new Button("Back");
+        
+        deleteArticle.setOnAction(e -> {
+        	String name = groupNameInput.getText();
+        	groupNameInput.clear();
+        	try {
+				databaseHelper.resetArticlesByGroupId(name);
+			} catch (SQLException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+        });
+        
+        back.setOnAction(e -> {
+        	try {
+        		generalArticleGroupOptions();
+			} catch (Exception e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}  // Show options again when going back
+        });
+        
+        optionBox.getChildren().addAll(
+        	groupName, 
+        	groupNameInput, 
+        	deleteArticle, 
+        	back
+        );
         optionBox.setAlignment(Pos.CENTER);
         ((VBox) outputArea.getParent()).getChildren().add(optionBox);
     }

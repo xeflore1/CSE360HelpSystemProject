@@ -98,6 +98,17 @@ class DatabaseHelper {
                 + "body CLOB, "
                 + "references CLOB)";
         statement.execute(articleTable);
+	// table for special access groups:
+        String specialAccessGroupsTable = "CREATE TABLE IF NOT EXISTS special_access_groups ("
+                + "id INT AUTO_INCREMENT PRIMARY KEY, "
+                + "group_name VARCHAR(255) NOT NULL, "
+                + "articles TEXT, "  // Serialized list of article IDs
+                + "admins TEXT, "  // Serialized list of admin user IDs
+                + "instructors_with_access TEXT, "  // Serialized list of instructor user IDs with access rights
+                + "instructors_with_admin_rights TEXT, "  // Serialized list of instructor user IDs with admin rights
+                + "students_with_viewing_rights TEXT"  // Serialized list of student user IDs with viewing rights
+                + ")";
+        statement.execute(specialAccessGroupsTable);
 	}
 
 	/*********
@@ -1048,6 +1059,141 @@ class DatabaseHelper {
     private void clearArticles() throws SQLException {
         String deleteAll = "DELETE FROM help_articles";
         statement.executeUpdate(deleteAll);
+    }
+
+    // create special access group method
+    public void createSpecialAccessGroup(String groupName, List<Long> articles, List<User> admins,
+    		List<User> instructorsWithAccess, List<User> instructorsWithAdminRights,
+            List<User> studentsWithViewingRights) throws SQLException {
+    	// Check if the special access group already exists by group name
+    	if (specialAccessGroupExistsByGroupName(groupName)) {
+    		System.out.println("Special access group with name \"" + groupName + "\" already exists.");
+    		return;
+    	}
+
+    	// Insert the group into the database
+    	String insertGroup = "INSERT INTO special_access_groups (group_name, articles, admins, instructors_with_access, " +
+    			"instructors_with_admin_rights, students_with_viewing_rights) VALUES (?, ?, ?, ?, ?, ?)";
+
+    	try (PreparedStatement pstmt = connection.prepareStatement(insertGroup)) {
+    		pstmt.setString(1, groupName);
+    		pstmt.setString(2, serializeList(articles)); // Convert articles to a serialized string
+    		pstmt.setString(3, serializeUsers(admins)); // Serialize admin list
+    		pstmt.setString(4, serializeUsers(instructorsWithAccess)); // Serialize instructors with access
+    		pstmt.setString(5, serializeUsers(instructorsWithAdminRights)); // Serialize instructors with admin rights
+    		pstmt.setString(6, serializeUsers(studentsWithViewingRights)); // Serialize students with viewing rights
+    		pstmt.executeUpdate();
+    		System.out.println("Special access group \"" + groupName + "\" created successfully.");
+    	} catch (SQLException e) {
+    		System.out.println("Error creating special access group: " + e.getMessage());
+    		throw e;
+    	}
+    }
+    
+    // helper #1
+    private boolean specialAccessGroupExistsByGroupName(String groupName) throws SQLException {
+        String query = "SELECT COUNT(*) FROM special_access_groups WHERE group_name = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+            pstmt.setString(1, groupName);
+            ResultSet rs = pstmt.executeQuery();
+            rs.next();
+            return rs.getInt(1) > 0;
+        }
+    }
+    
+    // helper #2
+    private String serializeList(List<Long> list) {
+        if (list == null || list.isEmpty()) {
+            return "";
+        }
+        return String.join(",", list.stream().map(String::valueOf).toArray(String[]::new));
+    }
+    
+    // helper #3
+    private String serializeUsers(List<User> users) {
+        if (users == null || users.isEmpty()) {
+            return "";
+        }
+        return String.join(",", users.stream().map(user -> String.valueOf(user.getId())).toArray(String[]::new));
+    }
+    
+    // method for updating special access group information
+    public void updateSpecialAccessGroup(String groupName, List<Long> articles, List<User> admins,
+            List<User> instructorsWithAccess, List<User> instructorsWithAdminRights,
+            List<User> studentsWithViewingRights) throws SQLException {
+    	// Check if the special access group exists by group name
+    	if (!specialAccessGroupExistsByGroupName(groupName)) {
+    		System.out.println("Special access group with name \"" + groupName + "\" does not exist.");
+    		return;
+    	}
+
+    	// Update the group details in the database
+    	String updateGroup = "UPDATE special_access_groups SET articles = ?, admins = ?, instructors_with_access = ?, " +
+    			"instructors_with_admin_rights = ?, students_with_viewing_rights = ? WHERE group_name = ?";
+
+    	try (PreparedStatement pstmt = connection.prepareStatement(updateGroup)) {
+    		pstmt.setString(1, serializeList(articles)); // Convert articles to a serialized string
+    		pstmt.setString(2, serializeUsers(admins)); // Serialize admin list
+    		pstmt.setString(3, serializeUsers(instructorsWithAccess)); // Serialize instructors with access
+    		pstmt.setString(4, serializeUsers(instructorsWithAdminRights)); // Serialize instructors with admin rights
+    		pstmt.setString(5, serializeUsers(studentsWithViewingRights)); // Serialize students with viewing rights
+    		pstmt.setString(6, groupName); // Group name for the WHERE clause
+    		pstmt.executeUpdate();
+    		System.out.println("Special access group \"" + groupName + "\" updated successfully.");
+    	} catch (SQLException e) {
+    		System.out.println("Error updating special access group: " + e.getMessage());
+    		throw e;
+    	}
+    }
+    
+    /**
+     * Deletes a special access group from the database by its unique ID.
+     *
+     * @param uniqueId The unique ID of the special access group to delete.
+     * @throws SQLException if a database access error occurs.
+     */
+    public void deleteSpecialAccessGroup(String groupName) throws SQLException {
+        // Check if the special access group exists by group name
+        if (!specialAccessGroupExistsByGroupName(groupName)) {
+            System.out.println("Special access group with name \"" + groupName + "\" does not exist.");
+            return;
+        }
+
+        // Delete the group from the database
+        String deleteGroup = "DELETE FROM special_access_groups WHERE group_name = ?";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(deleteGroup)) {
+            pstmt.setString(1, groupName); // Group name for the WHERE clause
+            pstmt.executeUpdate();
+            System.out.println("Special access group \"" + groupName + "\" deleted successfully.");
+        } catch (SQLException e) {
+            System.out.println("Error deleting special access group: " + e.getMessage());
+            throw e;
+        }
+    }
+    
+    /**
+     * Retrieves all special access group names from the database.
+     *
+     * @return A list of group names.
+     * @throws SQLException if a database access error occurs.
+     */
+    public List<String> getAllSpecialAccessGroups() throws SQLException {
+        String query = "SELECT group_name FROM special_access_groups";
+        List<String> groupNames = new ArrayList<>();
+
+        try (PreparedStatement pstmt = connection.prepareStatement(query);
+             ResultSet rs = pstmt.executeQuery()) {
+
+            while (rs.next()) {
+                groupNames.add(rs.getString("group_name"));
+            }
+        } catch (SQLException e) {
+            System.out.println("Error retrieving special access groups: " + e.getMessage());
+            throw e;
+        }
+
+        return groupNames;
     }
     
     /*********

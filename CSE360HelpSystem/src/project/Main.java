@@ -2371,6 +2371,7 @@ public class Main extends Application {
         Button deleteGroup = new Button("Delete article from Special Access Group");
         Button backupGroup = new Button("Backup Special Access Group");
         Button restoreGroup = new Button("Restore Special Access Group");
+        Button printGroups = new Button("Print All Special Access Groups"); // New button
         Button back = new Button("Back");
         
         // Set button actions
@@ -2389,6 +2390,9 @@ public class Main extends Application {
 		deleteGroup.setOnAction(e -> {
 			removeArticleFromSpecialAccessGroup();
 		});
+		printGroups.setOnAction(e -> { 
+			printSpecialAccessGroups();
+		});
        
         back.setOnAction(e -> {
         	//((VBox) outputArea.getParent()).getChildren().remove(deleteBox);
@@ -2403,6 +2407,7 @@ public class Main extends Application {
 	            editGroup,
 	            articeGroup,
 	            deleteGroup,
+	            printGroups,
 	            back
 	        );
         }
@@ -2417,6 +2422,16 @@ public class Main extends Application {
         optionBox.setAlignment(Pos.CENTER);
         ((VBox) outputArea.getParent()).getChildren().add(optionBox);
     }
+    
+    // method to print all created special access groups
+    private void printSpecialAccessGroups() {
+        outputArea.appendText("All Special Access Groups:\n");
+        List<SpecialAccessGroup> groups = SpecialAccessGroup.getAllGroups();
+        for (SpecialAccessGroup group : groups) {
+            outputArea.appendText(group.getGroupName() + "\n");
+        }
+    }
+
     
     // method to create a special access group
     // FIXME: ENWNEWNENWENWENWENWNEWNENWENW
@@ -2732,7 +2747,7 @@ public class Main extends Application {
 			            if (listToggleGroup.getSelectedToggle() == adminListButton && (user.hasRole(Role.ADMIN))) {
 			            	permissions = "Admins";
 			            	// logic to add user to admins, first clear inputs
-			                check = group.addToAdmins(user);
+			                group.addToAdmins(user);
 			                groupNameInput.clear();
 			                firstNameInput.clear();
 			                usernameInput.clear();
@@ -2740,7 +2755,7 @@ public class Main extends Application {
 			            } else if (listToggleGroup.getSelectedToggle() == instructorsAccessButton && (user.hasRole(Role.INSTRUCTOR))) {
 			            	permissions = "Instructors with article access";
 			            	// logic to add user to instructorsWithAccess
-			            	check = group.addToInstrWithAccess(user);
+			            	group.addToInstrWithAccess(user);
 			            	groupNameInput.clear();
 			                firstNameInput.clear();
 			                usernameInput.clear();
@@ -2748,7 +2763,7 @@ public class Main extends Application {
 			            } else if (listToggleGroup.getSelectedToggle() == instructorsAdminButton && (user.hasRole(Role.INSTRUCTOR))) {
 			            	permissions = "Instructors with admin permissions";
 			            	// logic to add user to instructorsWithAdminRights
-			            	check = group.addToInstrWithAdminRights(user);
+			            	group.addToInstrWithAdminRights(user);
 			            	groupNameInput.clear();
 			                firstNameInput.clear();
 			                usernameInput.clear();
@@ -2756,7 +2771,7 @@ public class Main extends Application {
 			            } else if (listToggleGroup.getSelectedToggle() == studentListButton && (user.hasRole(Role.STUDENT))) {
 			            	permissions = "Students";
 			            	// Add logic to add user to studentsWithViewingRights
-			            	check = group.addToStudentList(user);
+			            	group.addToStudentList(user);
 			            	groupNameInput.clear();
 			                firstNameInput.clear();
 			                usernameInput.clear();
@@ -2932,7 +2947,8 @@ public class Main extends Application {
             if (group != null) {
             	// if article is valid
             	if (uniqueId != -1) {
-            		boolean check = group.addToArticles(uniqueId);
+            		boolean check = true; 
+            		group.addToArticles(uniqueId);
             		groupNameInput.clear();
             		seqNumberInput.clear();
             		// article was successfully added
@@ -3014,7 +3030,8 @@ public class Main extends Application {
             if (group != null) {
             	// if article is valid
             	if (uniqueId != -1) {
-            		boolean check = group.removeFromArticles(uniqueId);
+            		boolean check = true;
+            		group.removeFromArticles(uniqueId);
             		List<Long> temp = group.getArticles();
             		for (Long i : temp) {
             			System.out.println(i);

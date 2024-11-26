@@ -38,7 +38,9 @@ class DatabaseHelper {
 
 	private Connection connection = null;
 	private Statement statement = null; 
-	//	PreparedStatement pstmt
+	
+    // list of users
+    private static List<User> userList = new ArrayList<>();
 	
 	private EncryptionHelper encryptionHelper;
 	//private ArticleIdHelper articleIdHelper;
@@ -98,17 +100,52 @@ class DatabaseHelper {
                 + "body CLOB, "
                 + "references CLOB)";
         statement.execute(articleTable);
-	// table for special access groups:
-        String specialAccessGroupsTable = "CREATE TABLE IF NOT EXISTS special_access_groups ("
+        // table for special access groups
+        String specialAccessGroupTable = "CREATE TABLE IF NOT EXISTS special_access_groups ("
+                + "id INT AUTO_INCREMENT PRIMARY KEY, "
+                + "group_name VARCHAR(255) NOT NULL)";
+        statement.execute(specialAccessGroupTable);
+        System.out.println("after group table");
+        // table for special articles list
+     // Table for special articles
+        String specialArticlesTable = "CREATE TABLE IF NOT EXISTS special_articles ("
                 + "id INT AUTO_INCREMENT PRIMARY KEY, "
                 + "group_name VARCHAR(255) NOT NULL, "
-                + "articles TEXT, "  // Serialized list of article IDs
-                + "admins TEXT, "  // Serialized list of admin user IDs
-                + "instructors_with_access TEXT, "  // Serialized list of instructor user IDs with access rights
-                + "instructors_with_admin_rights TEXT, "  // Serialized list of instructor user IDs with admin rights
-                + "students_with_viewing_rights TEXT"  // Serialized list of student user IDs with viewing rights
-                + ")";
-        statement.execute(specialAccessGroupsTable);
+                + "article_id BIGINT NOT NULL)";
+        statement.execute(specialArticlesTable);
+        System.out.println("after article table");
+
+        // Table for special admins list
+        String specialAdminsTable = "CREATE TABLE IF NOT EXISTS special_admins ("
+                + "id INT AUTO_INCREMENT PRIMARY KEY, "
+                + "group_name VARCHAR(255) NOT NULL, "
+                + "username VARCHAR(255) NOT NULL, "
+                + "firstName VARCHAR(255) NOT NULL)";
+        statement.execute(specialAdminsTable);
+
+        // Table for instructors with viewing access
+        String instructorsAccessTable = "CREATE TABLE IF NOT EXISTS special_instructors_access ("
+                + "id INT AUTO_INCREMENT PRIMARY KEY, "
+                + "group_name VARCHAR(255) NOT NULL, "
+                + "username VARCHAR(255), "
+                + "firstName VARCHAR(255))";
+        statement.execute(instructorsAccessTable);
+
+        // Table for instructors with admin rights
+        String instructorsAdminTable = "CREATE TABLE IF NOT EXISTS special_instructors_admin ("
+                + "id INT AUTO_INCREMENT PRIMARY KEY, "
+                + "group_name VARCHAR(255) NOT NULL, "
+                + "username VARCHAR(255), "
+                + "firstName VARCHAR(255))";
+        statement.execute(instructorsAdminTable);
+
+        // Table for students with viewing rights
+        String studentsViewingTable = "CREATE TABLE IF NOT EXISTS special_students_viewing ("
+                + "id INT AUTO_INCREMENT PRIMARY KEY, "
+                + "group_name VARCHAR(255) NOT NULL, "
+                + "username VARCHAR(255), "
+                + "firstName VARCHAR(255))";
+        statement.execute(studentsViewingTable); 
 	}
 
 	/*********
@@ -118,7 +155,7 @@ class DatabaseHelper {
      * @return user list
      */
 	public List<User> loadUsersFromDatabase() throws SQLException {
-	    List<User> userList = new ArrayList<>();
+	    //List<User> userList = new ArrayList<>();
 	    String selectAllUsers = "SELECT username, password, roles, email, firstName, middleName, lastName, preferredName, isOneTimePassword, oneTimePassword, otpExpiry FROM cse360users";
 	    
 	    try (Statement stmt = connection.createStatement();
@@ -203,7 +240,251 @@ class DatabaseHelper {
 	        }
 	    }
 	}
+	
+	// this method loads the special access group
+	public List<SpecialAccessGroup> loadSpecialAccessGroups() throws SQLException {
+	    List<SpecialAccessGroup> specialAccessGroups = new ArrayList<>();
 
+	    // Set to track the processed group names to avoid duplicates
+	    Set<String> processedGroupNames = new HashSet<>();
+
+	    // Set to track processed users to avoid duplicates across all lists
+	    Set<String> processedUsers = new HashSet<>();  // Track users by unique identifier
+	    // Separate sets for instructors in each category to allow same user in both lists
+	    Set<String> processedInstructorsWithAccess = new HashSet<>();
+	    Set<String> processedInstructorsWithAdminRights = new HashSet<>();
+	    Set<Long> processedArticles = new HashSet<>();
+
+	    // Map of group_id to groupName
+	    String groupQuery = "SELECT id, group_name FROM special_access_groups";
+	    Map<Integer, String> groupMap = new HashMap<>();
+	    try (Statement stmt = connection.createStatement();
+	         ResultSet rs = stmt.executeQuery(groupQuery)) {
+	        while (rs.next()) {
+	            groupMap.put(rs.getInt("id"), rs.getString("group_name"));
+	        }
+	    }
+
+	    // Rebuild the SpecialAccessGroup list
+	    for (Map.Entry<Integer, String> entry : groupMap.entrySet()) {
+	        int groupId = entry.getKey();
+	        String groupName = entry.getValue();
+
+	        // Skip if the group has already been processed
+	        if (processedGroupNames.contains(groupName)) {
+	            continue;  // Skip this iteration if group is already in the list
+	        }
+
+	        // Mark this group as processed
+	        processedGroupNames.add(groupName);
+
+	        // Load admins for the group
+	        List<User> admins = new ArrayList<>();
+	        String adminsQuery = "SELECT username, firstName FROM special_admins WHERE group_name = ?";
+	        try (PreparedStatement pstmt = connection.prepareStatement(adminsQuery)) {
+	            pstmt.setString(1, groupName);
+	            try (ResultSet rs = pstmt.executeQuery()) {
+	                while (rs.next()) {
+	                    String userIdentifier = rs.getString("username") + rs.getString("firstName");
+	                    if (!processedUsers.contains(userIdentifier)) {
+	                        User user = findUser(rs.getString("username"), rs.getString("firstName"));
+	                        if (user != null) {
+	                            admins.add(user);
+	                            processedUsers.add(userIdentifier);  // Mark user as processed
+	                        }
+	                    }
+	                }
+	            }
+	        }
+
+	        // Load instructors with access for the group
+	        List<User> instructorsWithAccess = new ArrayList<>();
+	        String instructorsAccessQuery = "SELECT username, firstName FROM special_instructors_access WHERE group_name = ?";
+	        try (PreparedStatement pstmt = connection.prepareStatement(instructorsAccessQuery)) {
+	            pstmt.setString(1, groupName);
+	            try (ResultSet rs = pstmt.executeQuery()) {
+	                while (rs.next()) {
+	                    String userIdentifier = rs.getString("username") + rs.getString("firstName");
+	                    if (!processedInstructorsWithAccess.contains(userIdentifier)) {
+	                        User user = findUser(rs.getString("username"), rs.getString("firstName"));
+	                        if (user != null) {
+	                            instructorsWithAccess.add(user);
+	                            processedInstructorsWithAccess.add(userIdentifier);  // Mark instructor as processed for this list
+	                            processedUsers.add(userIdentifier);  // Mark user as processed globally
+	                        }
+	                    }
+	                }
+	            }
+	        }
+
+	        // Load instructors with admin rights for the group
+	        List<User> instructorsWithAdminRights = new ArrayList<>();
+	        String instructorsAdminQuery = "SELECT username, firstName FROM special_instructors_admin WHERE group_name = ?";
+	        try (PreparedStatement pstmt = connection.prepareStatement(instructorsAdminQuery)) {
+	            pstmt.setString(1, groupName);
+	            try (ResultSet rs = pstmt.executeQuery()) {
+	                while (rs.next()) {
+	                    String userIdentifier = rs.getString("username") + rs.getString("firstName");
+	                    if (!processedInstructorsWithAdminRights.contains(userIdentifier)) {
+	                        User user = findUser(rs.getString("username"), rs.getString("firstName"));
+	                        if (user != null) {
+	                            instructorsWithAdminRights.add(user);
+	                            processedInstructorsWithAdminRights.add(userIdentifier);  // Mark instructor as processed for this list
+	                            processedUsers.add(userIdentifier);  // Mark user as processed globally
+	                        }
+	                    }
+	                }
+	            }
+	        }
+
+	        // Load students with viewing rights for the group
+	        List<User> studentsWithViewingRights = new ArrayList<>();
+	        String studentsViewingQuery = "SELECT username, firstName FROM special_students_viewing WHERE group_name = ?";
+	        try (PreparedStatement pstmt = connection.prepareStatement(studentsViewingQuery)) {
+	            pstmt.setString(1, groupName);
+	            try (ResultSet rs = pstmt.executeQuery()) {
+	                while (rs.next()) {
+	                    String userIdentifier = rs.getString("username") + rs.getString("firstName");
+	                    if (!processedUsers.contains(userIdentifier)) {
+	                        User user = findUser(rs.getString("username"), rs.getString("firstName"));
+	                        if (user != null) {
+	                            studentsWithViewingRights.add(user);
+	                            processedUsers.add(userIdentifier);  // Mark user as processed globally
+	                        }
+	                    }
+	                }
+	            }
+	        }
+
+	        // Load articles for the group
+	        List<Long> articles = new ArrayList<>();
+	        String articleQuery = "SELECT article_id FROM special_articles WHERE group_name = ?";
+	        try (PreparedStatement pstmt = connection.prepareStatement(articleQuery)) {
+	            pstmt.setString(1, groupName);
+	            try (ResultSet rs = pstmt.executeQuery()) {
+	                while (rs.next()) {
+	                    Long articleId = rs.getLong("article_id");
+	                    if (!processedArticles.contains(articleId)) {
+	                        articles.add(articleId);
+	                        processedArticles.add(articleId);  // Mark article as processed
+	                    }
+	                }
+	            }
+	        }
+
+	        // Add to the list of special access groups
+	        specialAccessGroups.add(new SpecialAccessGroup(
+	            groupName, 
+	            articles, 
+	            admins, 
+	            instructorsWithAccess, 
+	            instructorsWithAdminRights, 
+	            studentsWithViewingRights
+	        ));
+	    }
+
+	    return specialAccessGroups;
+	} 
+
+	// Helper method to find a user by username and first name
+	private User findUser(String username, String firstName) {
+	    for (User curr : userList) {
+	        if (curr.getFirstName().equals(firstName) && curr.getUsername().equals(username)) {
+	            return curr;
+	        }
+	    }
+	    return null;
+	}
+
+	// This method saves the special access group to the database
+	public void saveSpecialAccessGroupsToDatabase(List<SpecialAccessGroup> specialAccessGroups) throws SQLException {
+	    // SQL queries for insertion
+	    String insertGroupQuery = "INSERT INTO special_access_groups (group_name) VALUES (?)";
+	    String insertArticleQuery = "INSERT INTO special_articles (group_name, article_id) VALUES (?, ?)";
+	    String insertAdminQuery = "INSERT INTO special_admins (group_name, username, firstName) VALUES (?, ?, ?)";
+	    String insertInstructorAccessQuery = "INSERT INTO special_instructors_access (group_name, username, firstName) VALUES (?, ?, ?)";
+	    String insertInstructorAdminQuery = "INSERT INTO special_instructors_admin (group_name, username, firstName) VALUES (?, ?, ?)";
+	    String insertStudentViewingQuery = "INSERT INTO special_students_viewing (group_name, username, firstName) VALUES (?, ?, ?)";
+
+	    for (SpecialAccessGroup group : specialAccessGroups) {
+	        // Insert into special_access_groups
+	        try (PreparedStatement pstmt = connection.prepareStatement(insertGroupQuery)) {
+	            pstmt.setString(1, group.getGroupName());
+	            pstmt.executeUpdate();
+
+	            // Retrieve the generated group_id
+	            int groupId = -1;
+	            try (ResultSet rs = pstmt.getGeneratedKeys()) {
+	                if (rs.next()) {
+	                    groupId = rs.getInt(1);
+	                }
+	            }
+
+	            // Insert articles into special_articles if not empty or null
+	            if (group.getArticles() != null && !group.getArticles().isEmpty()) {
+	                try (PreparedStatement pstmtO = connection.prepareStatement(insertArticleQuery)) {
+	                    for (Long articleId : group.getArticles()) {
+	                        pstmtO.setString(1, group.getGroupName());
+	                        pstmtO.setLong(2, articleId);
+	                        pstmtO.executeUpdate();
+	                    }
+	                }
+	            }
+
+	            // Insert admins into special_admins if not empty or null
+	            if (group.getAdmins() != null && !group.getAdmins().isEmpty()) {
+	                try (PreparedStatement pstmtT = connection.prepareStatement(insertAdminQuery)) {
+	                    for (User admin : group.getAdmins()) {
+	                        pstmtT.setString(1, group.getGroupName());
+	                        pstmtT.setString(2, admin.getUsername());
+	                        pstmtT.setString(3, admin.getFirstName());
+	                        pstmtT.executeUpdate();
+	                    }
+	                }
+	            }
+
+	            // Insert instructors with access into special_instructors_access if not empty or null
+	            if (group.getInstructorsWithAccess() != null && !group.getInstructorsWithAccess().isEmpty()) {
+	                try (PreparedStatement pstmtTh = connection.prepareStatement(insertInstructorAccessQuery)) {
+	                    for (User instructor : group.getInstructorsWithAccess()) {
+	                        pstmtTh.setString(1, group.getGroupName());
+	                        pstmtTh.setString(2, instructor.getUsername());
+	                        pstmtTh.setString(3, instructor.getFirstName());
+	                        pstmtTh.executeUpdate();
+	                    }
+	                }
+	            }
+
+	            // Insert instructors with admin rights into special_instructors_admin if not empty or null
+	            if (group.getInstructorsWithAdminRights() != null && !group.getInstructorsWithAdminRights().isEmpty()) {
+	                try (PreparedStatement pstmtF = connection.prepareStatement(insertInstructorAdminQuery)) {
+	                    for (User instructor : group.getInstructorsWithAdminRights()) {
+	                        pstmtF.setString(1, group.getGroupName());
+	                        pstmtF.setString(2, instructor.getUsername());
+	                        pstmtF.setString(3, instructor.getFirstName());
+	                        pstmtF.executeUpdate();
+	                    }
+	                }
+	            }
+
+	            // Insert students with viewing rights into special_students_viewing if not empty or null
+	            if (group.getStudentsWithAccess() != null && !group.getStudentsWithAccess().isEmpty()) {
+	                try (PreparedStatement pstmtFi = connection.prepareStatement(insertStudentViewingQuery)) {
+	                    for (User student : group.getStudentsWithAccess()) {
+	                        pstmtFi.setString(1, group.getGroupName());
+	                        pstmtFi.setString(2, student.getUsername());
+	                        pstmtFi.setString(3, student.getFirstName());
+	                        pstmtFi.executeUpdate();
+	                    }
+	                }
+	            }
+
+	        } catch (SQLException e) {
+	            e.printStackTrace();  // Handle exceptions as necessary
+	            throw e;
+	        }
+	    }
+	}
 	/*********
      * This is the method used to check if the database is empty
      * Exception handling takes care of any database errors
@@ -640,13 +921,12 @@ class DatabaseHelper {
     public String listArticlesByUniqueLongId(long id) throws SQLException {
         
     	if (id == 0) {
-        	System.out.println("aaaaaahahhahah");
     		return listArticles();
         }
     	
     	// Use LIKE to find articles that contain the specified groupId
         String query = "SELECT * FROM help_articles WHERE unique_id LIKE ?";
-        StringBuilder articlesList = new StringBuilder("Article with unique id [").append(id).append("]:\n");
+        StringBuilder articlesList = new StringBuilder("\nArticle with unique id [").append(id).append("]:\n");
         
         // Prepare the wildcard pattern for the LIKE clause
         String likeId = "%" + id + "%"; // For example: "%java%"
@@ -705,7 +985,7 @@ class DatabaseHelper {
         }
 
         String query = queryBuilder.toString();
-        StringBuilder articlesList = new StringBuilder("Articles in Group [").append(group).append("]:\n");
+        StringBuilder articlesList = new StringBuilder("\nArticles in Group [").append(group).append("]:\n");
         
         // Prepare wildcards for the LIKE clause
         String likeLevel = "%" + level + "%";
@@ -1060,141 +1340,6 @@ class DatabaseHelper {
         String deleteAll = "DELETE FROM help_articles";
         statement.executeUpdate(deleteAll);
     }
-
-    // create special access group method
-    public void createSpecialAccessGroup(String groupName, List<Long> articles, List<User> admins,
-    		List<User> instructorsWithAccess, List<User> instructorsWithAdminRights,
-            List<User> studentsWithViewingRights) throws SQLException {
-    	// Check if the special access group already exists by group name
-    	if (specialAccessGroupExistsByGroupName(groupName)) {
-    		System.out.println("Special access group with name \"" + groupName + "\" already exists.");
-    		return;
-    	}
-
-    	// Insert the group into the database
-    	String insertGroup = "INSERT INTO special_access_groups (group_name, articles, admins, instructors_with_access, " +
-    			"instructors_with_admin_rights, students_with_viewing_rights) VALUES (?, ?, ?, ?, ?, ?)";
-
-    	try (PreparedStatement pstmt = connection.prepareStatement(insertGroup)) {
-    		pstmt.setString(1, groupName);
-    		pstmt.setString(2, serializeList(articles)); // Convert articles to a serialized string
-    		pstmt.setString(3, serializeUsers(admins)); // Serialize admin list
-    		pstmt.setString(4, serializeUsers(instructorsWithAccess)); // Serialize instructors with access
-    		pstmt.setString(5, serializeUsers(instructorsWithAdminRights)); // Serialize instructors with admin rights
-    		pstmt.setString(6, serializeUsers(studentsWithViewingRights)); // Serialize students with viewing rights
-    		pstmt.executeUpdate();
-    		System.out.println("Special access group \"" + groupName + "\" created successfully.");
-    	} catch (SQLException e) {
-    		System.out.println("Error creating special access group: " + e.getMessage());
-    		throw e;
-    	}
-    }
-    
-    // helper #1
-    private boolean specialAccessGroupExistsByGroupName(String groupName) throws SQLException {
-        String query = "SELECT COUNT(*) FROM special_access_groups WHERE group_name = ?";
-        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
-            pstmt.setString(1, groupName);
-            ResultSet rs = pstmt.executeQuery();
-            rs.next();
-            return rs.getInt(1) > 0;
-        }
-    }
-    
-    // helper #2
-    private String serializeList(List<Long> list) {
-        if (list == null || list.isEmpty()) {
-            return "";
-        }
-        return String.join(",", list.stream().map(String::valueOf).toArray(String[]::new));
-    }
-    
-    // helper #3
-    private String serializeUsers(List<User> users) {
-        if (users == null || users.isEmpty()) {
-            return "";
-        }
-        return String.join(",", users.stream().map(user -> String.valueOf(user.getId())).toArray(String[]::new));
-    }
-    
-    // method for updating special access group information
-    public void updateSpecialAccessGroup(String groupName, List<Long> articles, List<User> admins,
-            List<User> instructorsWithAccess, List<User> instructorsWithAdminRights,
-            List<User> studentsWithViewingRights) throws SQLException {
-    	// Check if the special access group exists by group name
-    	if (!specialAccessGroupExistsByGroupName(groupName)) {
-    		System.out.println("Special access group with name \"" + groupName + "\" does not exist.");
-    		return;
-    	}
-
-    	// Update the group details in the database
-    	String updateGroup = "UPDATE special_access_groups SET articles = ?, admins = ?, instructors_with_access = ?, " +
-    			"instructors_with_admin_rights = ?, students_with_viewing_rights = ? WHERE group_name = ?";
-
-    	try (PreparedStatement pstmt = connection.prepareStatement(updateGroup)) {
-    		pstmt.setString(1, serializeList(articles)); // Convert articles to a serialized string
-    		pstmt.setString(2, serializeUsers(admins)); // Serialize admin list
-    		pstmt.setString(3, serializeUsers(instructorsWithAccess)); // Serialize instructors with access
-    		pstmt.setString(4, serializeUsers(instructorsWithAdminRights)); // Serialize instructors with admin rights
-    		pstmt.setString(5, serializeUsers(studentsWithViewingRights)); // Serialize students with viewing rights
-    		pstmt.setString(6, groupName); // Group name for the WHERE clause
-    		pstmt.executeUpdate();
-    		System.out.println("Special access group \"" + groupName + "\" updated successfully.");
-    	} catch (SQLException e) {
-    		System.out.println("Error updating special access group: " + e.getMessage());
-    		throw e;
-    	}
-    }
-    
-    /**
-     * Deletes a special access group from the database by its unique ID.
-     *
-     * @param uniqueId The unique ID of the special access group to delete.
-     * @throws SQLException if a database access error occurs.
-     */
-    public void deleteSpecialAccessGroup(String groupName) throws SQLException {
-        // Check if the special access group exists by group name
-        if (!specialAccessGroupExistsByGroupName(groupName)) {
-            System.out.println("Special access group with name \"" + groupName + "\" does not exist.");
-            return;
-        }
-
-        // Delete the group from the database
-        String deleteGroup = "DELETE FROM special_access_groups WHERE group_name = ?";
-
-        try (PreparedStatement pstmt = connection.prepareStatement(deleteGroup)) {
-            pstmt.setString(1, groupName); // Group name for the WHERE clause
-            pstmt.executeUpdate();
-            System.out.println("Special access group \"" + groupName + "\" deleted successfully.");
-        } catch (SQLException e) {
-            System.out.println("Error deleting special access group: " + e.getMessage());
-            throw e;
-        }
-    }
-    
-    /**
-     * Retrieves all special access group names from the database.
-     *
-     * @return A list of group names.
-     * @throws SQLException if a database access error occurs.
-     */
-    public List<String> getAllSpecialAccessGroups() throws SQLException {
-        String query = "SELECT group_name FROM special_access_groups";
-        List<String> groupNames = new ArrayList<>();
-
-        try (PreparedStatement pstmt = connection.prepareStatement(query);
-             ResultSet rs = pstmt.executeQuery()) {
-
-            while (rs.next()) {
-                groupNames.add(rs.getString("group_name"));
-            }
-        } catch (SQLException e) {
-            System.out.println("Error retrieving special access groups: " + e.getMessage());
-            throw e;
-        }
-
-        return groupNames;
-    }
     
     /*********
      * This is the method used to close the connection of database
@@ -1221,7 +1366,26 @@ class DatabaseHelper {
         return -1; // Return -1 if the article is not found or an error occurs
     }
     
-    // method updates an articles group given its sequence num
+    // method returns an articles long id given its title and author
+    public long getUniqueIdByTitleAndAuthor(String title, String author) {
+        String query = "SELECT unique_id FROM help_articles WHERE title = ? AND authors = ?";
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, title);
+            statement.setString(2, author);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getLong("unique_id");
+                } else {
+                    System.out.println("Article with title \"" + title + "\" and author \"" + author + "\" not found.");
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return -1; // Return -1 if the article is not found or an error occurs
+    }
+    
+ // method updates an articles group given its sequence num
     public void updateArticleGroupId(int id, String newGroup) throws SQLException {
         String updateQuery = "UPDATE help_articles SET groupId = ? WHERE id = ?";
 

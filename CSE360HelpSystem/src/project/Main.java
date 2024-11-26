@@ -54,8 +54,8 @@ public class Main extends Application {
     private Role currRole; // keeps track of the current role of the user
     private static List<String> genericQuestions = new ArrayList<>(); // list of generic questions
     private static List<String> specificQuestions = new ArrayList<>(); // list of specific questions
-    private static List<SpecialAccessGroup> specialAccessGroupsList = new ArrayList<>(); // list of special access groups
     private static List<String> generalArticleGroupsList = new ArrayList<>();
+    private static List<SpecialAccessGroup> specialAccessGroupsList = new ArrayList<>(); // list of special access groups
 
 
 
@@ -80,13 +80,28 @@ public class Main extends Application {
         theStage.setTitle("ASU Help System");
 
         // Initialize the database helper
+        System.out.println("before init database");
+
         databaseHelper = new DatabaseHelper();
+        System.out.println("after init database");
         
         try {
         	// connect to database
         	databaseHelper.connectToDatabase();  // Connect to the database
+            System.out.println("aftetr connect");
+
             // Load users from the database into the userList
             userList = databaseHelper.loadUsersFromDatabase();
+            for (User u : userList) {
+            	System.out.println("username: " + u.getUsername());
+            }
+            specialAccessGroupsList = databaseHelper.loadSpecialAccessGroups();
+            for (SpecialAccessGroup s : specialAccessGroupsList) {
+            	System.out.println("name: " + s.getGroupName());
+            }
+            for (SpecialAccessGroup s : specialAccessGroupsList) {
+            	System.out.println("article: " + s.getArticles());
+            }
         } catch (Exception e) {
             outputArea.appendText("Error loading users from the database: " + e.getMessage() + "\n");
         }
@@ -315,7 +330,9 @@ public class Main extends Application {
         Button quitButton = new Button("Quit");
 	    Button manageStudentsButton = new Button("Manage Students");
         Button aritcleButton = new Button("Article settings");
-        Button generalArticleOptions = new Button("General article group options");
+    	Button specialAccessGroups = new Button("Special access group options");
+    	Button generalGroupOptions = new Button("General article group options");
+
         
 
         // Add admin options only if the current user is an admin
@@ -350,19 +367,18 @@ public class Main extends Application {
                 addOrRemoveRole,
                 resetUserButton,
                 aritcleButton,
-                generalArticleOptions,
+                specialAccessGroups,
                 quitButton
             );
         } 
         else if (currRole == Role.INSTRUCTOR) {  	
         	// Button declaration
-        	Button specialAccessGroups = new Button("Special access group options");
         	
         	optionBox.getChildren().addAll(
                     new Label("Select an option:"),
                     aritcleButton,
-                    generalArticleOptions,
                     specialAccessGroups,
+                    generalGroupOptions,
                     manageStudentsButton,
                     signOutButton,
                     quitButton
@@ -376,21 +392,11 @@ public class Main extends Application {
 					e1.printStackTrace();
 				}
 			}); 
-        	
-        	generalArticleOptions.setOnAction(e -> {
-        		generalArticleGroupOptions();
-        	}); 
             
-        	manageStudentsButton.setOnAction(e -> manageStudents());
-        	
-        	specialAccessGroups.setOnAction(e -> {
-        		try {
-					specialAccessGroupOptions();
-				} catch (Exception e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
+        	generalGroupOptions.setOnAction(e -> {
+        		generalArticleGroupOptions();
         	});
+        	manageStudentsButton.setOnAction(e -> manageStudents());
         }
         
         
@@ -423,7 +429,14 @@ public class Main extends Application {
         	}));
         	
         }
-
+        specialAccessGroups.setOnAction(e -> {
+    		try {
+				specialAccessGroupOptions();
+			} catch (Exception e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+    	});
         // Set sign out, quit and manage student button actions
         signOutButton.setOnAction(e -> signOut());
 	    //manageStudentsButton.setOnAction(e -> manageStudents());
@@ -432,6 +445,7 @@ public class Main extends Application {
         	// Save the updated user list to the database
             try {
 				databaseHelper.saveUserListToDatabase(userList);
+				databaseHelper.saveSpecialAccessGroupsToDatabase(specialAccessGroupsList);
 			} catch (Exception e1) {
 				outputArea.appendText("Error saving list to database\n");
 				e1.printStackTrace();
@@ -1386,6 +1400,10 @@ public class Main extends Application {
         Button listArticles = new Button("List articles");
         Button listArticlesByGroup = new Button("List articles by group");
         Button viewArticle = new Button("View an article");
+        Button viewByUniqueLong = new Button("View articles by unique long identifier");
+        Button viewByLevelAndGroup = new Button("View articles by level and group");
+        Button viewBySeqNum = new Button("View article in detail using sequence number");
+        Button listByLevel = new Button("View article by level (beginner, intermediate, advanced, expert)");
         Button createArticles = new Button("Create article");
         Button updateArticle = new Button("Update article");
         Button deleteArticles = new Button("Delete article");
@@ -1417,6 +1435,42 @@ public class Main extends Application {
 			} catch (Exception e1) {
 				outputArea.appendText("error calling view article");
 				e1.printStackTrace();
+			}
+        });
+        viewByUniqueLong.setOnAction(event -> {
+			try {
+				((VBox) outputArea.getParent()).getChildren().remove(optionBox);
+				listByUniqueLongId();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		});
+        viewByLevelAndGroup.setOnAction(event -> {
+			try {
+				((VBox) outputArea.getParent()).getChildren().remove(optionBox);
+				listByLevelAndGroup();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		});
+        viewBySeqNum.setOnAction(event -> {
+			try {
+				((VBox) outputArea.getParent()).getChildren().remove(optionBox);
+				listBySeqNum();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		});
+        listByLevel.setOnAction(event -> {
+        	try {
+        		((VBox) outputArea.getParent()).getChildren().remove(optionBox);
+				listByLevel();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
         });
         createArticles.setOnAction(e -> {
@@ -1464,17 +1518,23 @@ public class Main extends Application {
             showUserOptions(currRole);  // Show options again when going back
         });
         
-        if (currRole == Role.ADMIN) {
+        if (currRole == Role.INSTRUCTOR) {
         	optionBox.getChildren().addAll(
-                    new Label("Select an option:"),
-                    listArticles,
-                    listArticlesByGroup,
-                    createArticles,
-                    deleteArticles,
-                    backupArticles,
-                    restoreArticles,
-                    back
-                );
+    	            new Label("Select an option:"),
+    	            listArticles,
+    	            listArticlesByGroup,
+    	            viewArticle,
+    	            listByLevel,
+    	            viewByUniqueLong,
+    	            viewByLevelAndGroup,
+    	            viewBySeqNum,
+    	            createArticles,
+    	            updateArticle,
+    	            deleteArticles,
+    	            backupArticles,
+    	            restoreArticles,
+    	            back
+    	        );
         }
         else {
 	        optionBox.getChildren().addAll(
@@ -1824,19 +1884,50 @@ public class Main extends Application {
         listButton.setOnAction(event -> {
         	// get num input
             int seqNumId = Integer.parseInt(seqNumInput.getText());
-        	try {
-        		// call list by group method
-				String list = databaseHelper.getFormattedArticleWithSeq(seqNumId);
-				outputArea.appendText(list);
-				((VBox) outputArea.getParent()).getChildren().remove(listBox);
-				showUserOptions(currRole);
-			} catch (SQLException e) {
-				outputArea.appendText("error when calling list article\n");
-				e.printStackTrace();
-			} catch (Exception e) {
-				outputArea.appendText("error going back to article options\n");
-				e.printStackTrace();
-			}
+            // check if article is in special access group
+            long articleUniqueId = databaseHelper.getUniqueIdById(seqNumId);
+            SpecialAccessGroup specialGroup = null;
+            for (SpecialAccessGroup curr : specialAccessGroupsList) {
+            	if (curr.doesArticleExist(articleUniqueId)) { // article belongs to special access group
+            		specialGroup = curr;
+            	}
+            }
+            if (specialGroup == null) { // article doesnt belong to a special group
+            	try {
+            		// call list by group method
+    				String list = databaseHelper.getFormattedArticleWithSeq(seqNumId);
+    				outputArea.appendText(list);
+    				((VBox) outputArea.getParent()).getChildren().remove(listBox);
+    				showUserOptions(currRole);
+    			} catch (SQLException e) {
+    				outputArea.appendText("error when calling list article\n");
+    				e.printStackTrace();
+    			} catch (Exception e) {
+    				outputArea.appendText("error going back to article options\n");
+    				e.printStackTrace();
+    			}
+            }
+            else { // article belongs to a special access group
+	            if (specialGroup.doesStudentExistInStudentList(currentUser)) { // if student exists in special access group
+	            	try {
+	            		// call list by group method
+	    				String list = databaseHelper.getFormattedArticleWithSeq(seqNumId);
+	    				outputArea.appendText(list);
+	    				((VBox) outputArea.getParent()).getChildren().remove(listBox);
+	    				showUserOptions(currRole);
+	    			} catch (SQLException e) {
+	    				outputArea.appendText("error when calling list article\n");
+	    				e.printStackTrace();
+	    			} catch (Exception e) {
+	    				outputArea.appendText("error going back to article options\n");
+	    				e.printStackTrace();
+	    			}
+	            }
+	            else { // student cant view article
+    				outputArea.appendText("Student does not have access to the special access group this article is in.\n");
+	            }
+            }
+        	
         });
         
         // when back is pressed
@@ -1879,19 +1970,49 @@ public class Main extends Application {
         	// get num input
         	String artTitle = titleInput.getText();
         	String artAuthor = authorInput.getText();
-        	try {
-        		// call view method
-				String details = databaseHelper.getFormattedArticle(artTitle, artAuthor);
-				outputArea.appendText(details);
-				((VBox) outputArea.getParent()).getChildren().remove(listBox);
-				articleOptions();
-			} catch (SQLException e) {
-				outputArea.appendText("error when calling list article\n");
-				e.printStackTrace();
-			} catch (Exception e) {
-				outputArea.appendText("error going back to article options\n");
-				e.printStackTrace();
-			}
+        	// get the long id of the aritcle to see viewing permissions
+        	long articleUniqueId = databaseHelper.getUniqueIdByTitleAndAuthor(artTitle, artAuthor);
+        	SpecialAccessGroup specialGroup = null;
+        	for (SpecialAccessGroup curr : specialAccessGroupsList) {
+        		if (curr.doesArticleExist(articleUniqueId)) { // if article exists in the current group
+        			specialGroup = curr;
+        		}
+        	}
+        	if (specialGroup != null) { // aritcle is part of a special access group
+	        	if (specialGroup.doesInstrExistInAccessList(currentUser) || specialGroup.doesStudentExistInStudentList(currentUser)) { // if current user has viewing rights
+	        		try {
+		        		// call view method
+						String details = databaseHelper.getFormattedArticle(artTitle, artAuthor);
+						outputArea.appendText(details);
+						((VBox) outputArea.getParent()).getChildren().remove(listBox);
+						articleOptions();
+					} catch (SQLException e) {
+						outputArea.appendText("error when calling list article\n");
+						e.printStackTrace();
+					} catch (Exception e) {
+						outputArea.appendText("error going back to article options\n");
+						e.printStackTrace();
+					}
+	        	}
+	        	else { // current user doesn't have viewing rights
+					outputArea.appendText("Article is a part of a special access group you do not have permissions for.\n");
+	        	}
+        	}
+        	else { // article isn't a part of a group
+        		try {
+	        		// call view method
+					String details = databaseHelper.getFormattedArticle(artTitle, artAuthor);
+					outputArea.appendText(details);
+					((VBox) outputArea.getParent()).getChildren().remove(listBox);
+					articleOptions();
+				} catch (SQLException e) {
+					outputArea.appendText("error when calling list article\n");
+					e.printStackTrace();
+				} catch (Exception e) {
+					outputArea.appendText("error going back to article options\n");
+					e.printStackTrace();
+				}
+        	}
         });
         
         // when back is pressed
@@ -2367,7 +2488,7 @@ public class Main extends Application {
         backButton.setOnAction(event -> {
             ((VBox) outputArea.getParent()).getChildren().remove(listBox);
             try {
-                articleOptions();
+                showUserOptions(currRole);
             } catch (Exception e) {
                 outputArea.appendText("Error going back\n");
                 e.printStackTrace();
@@ -2387,14 +2508,12 @@ public class Main extends Application {
         
         // All choices for article settings
         Button createGroup = new Button("Create Special Access Group");
-        Button deleteGroup = new Button("Delete a Special Access Group");
         Button viewGroup = new Button("View Special Access Group");
         Button editGroup = new Button("Edit a Special Access Group");
-        Button articeGroup = new Button("Add article to a Special Access Group");
-        Button deleteArticle = new Button("Delete article from Special Access Group");
+        Button articeAdd = new Button("Add article to a Special Access Group");
+        Button deleteRemove = new Button("Delete article from Special Access Group");
         Button backupGroup = new Button("Backup Special Access Group");
         Button restoreGroup = new Button("Restore Special Access Group");
-        Button printGroups = new Button("Print All Special Access Groups"); // New button
         Button back = new Button("Back");
         
         // Set button actions
@@ -2407,17 +2526,11 @@ public class Main extends Application {
         editGroup.setOnAction(e -> {
         	editSpecialAccessGroup();
 		});
-        articeGroup.setOnAction(e -> {
+        articeAdd.setOnAction(e -> {
         	addArticleToSpecialAccessGroup();
         });
-        deleteArticle.setOnAction(e -> {
-        	removeArticleFromSpecialAccessGroup();
-        });
-		deleteGroup.setOnAction(e -> {
-			deleteSpecialAccessArticleGroup();
-		});
-		printGroups.setOnAction(e -> { 
-			printSpecialAccessGroups();
+        deleteRemove.setOnAction(e -> {
+			removeArticleFromSpecialAccessGroup();
 		});
        
         back.setOnAction(e -> {
@@ -2431,16 +2544,15 @@ public class Main extends Application {
 	            createGroup,
 	            viewGroup,
 	            editGroup,
-	            deleteArticle,
-	            articeGroup,
-	            printGroups,
-	            deleteGroup,
+	            articeAdd,
+	            deleteRemove,
 	            back
 	        );
         }
         else if (currRole == Role.ADMIN) {
 	        optionBox.getChildren().addAll(
 	            new Label("Select an option:"),
+	            viewGroup,
 	            editGroup,
 	            back
 	        );
@@ -2449,16 +2561,6 @@ public class Main extends Application {
         optionBox.setAlignment(Pos.CENTER);
         ((VBox) outputArea.getParent()).getChildren().add(optionBox);
     }
-    
-    // method to print all created special access groups
-    private void printSpecialAccessGroups() {
-        outputArea.appendText("All Special Access Groups:\n");
-        List<SpecialAccessGroup> groups = SpecialAccessGroup.getAllGroups();
-        for (SpecialAccessGroup group : groups) {
-            outputArea.appendText(group.getGroupName() + "\n");
-        }
-    }
-
     
     // method to create a special access group
     // FIXME: ENWNEWNENWENWENWENWNEWNENWENW
@@ -2513,52 +2615,6 @@ public class Main extends Application {
         optionBox.setAlignment(Pos.CENTER);
         ((VBox) outputArea.getParent()).getChildren().add(optionBox);  
     }
-    
-    // method to delete special access article group
-    private void deleteSpecialAccessArticleGroup() {
-    	outputArea.appendText("Delete special access article group\n");
-    	
-    	clearPreviousOptionBox();  // Ensure only one options box is visible
-        // Clear the optionBox before adding new options
-        optionBox.getChildren().clear();
-        // Labels
-        Label groupName = new Label("Enter group name to delete");
-        TextField groupNameInput = new TextField();
-        // Buttons 
-        Button deleteArticle = new Button("Delete");
-        Button back = new Button("Back");
-        
-        deleteArticle.setOnAction(e -> {
-        	String name = groupNameInput.getText();
-        	groupNameInput.clear();
-        	SpecialAccessGroup remove = null;
-        	for (SpecialAccessGroup p : specialAccessGroupsList) {
-        		if (p.getGroupName().equals(name)) {
-        			remove = p;
-        		}
-        	}
-            specialAccessGroupsList.remove(remove);
-            outputArea.appendText("Special access group deleted\n");
-        });
-        
-        back.setOnAction(e -> {
-        	try {
-        		specialAccessGroupOptions();
-			} catch (Exception e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}  // Show options again when going back
-        });
-        
-        optionBox.getChildren().addAll(
-        	groupName, 
-        	groupNameInput, 
-        	deleteArticle, 
-        	back
-        );
-        optionBox.setAlignment(Pos.CENTER);
-        ((VBox) outputArea.getParent()).getChildren().add(optionBox);
-    }
     // method to view a special access group
     // FIXME: ENWNEWNENWENWENWENWNEWNENWENW finish actual viewing stuff
     private void viewSpecialAccessGroup() {
@@ -2591,31 +2647,36 @@ public class Main extends Application {
         	}  
         	// if group exists
         	if (group != null) {
-	        	// retrieve all lists
-	        	List<User> admins = group.getAdmins();
-	        	List<User> instrWithAccess = group.getInstructorsWithAccess();
-	        	List<User> instrWithAdmin = group.getInstructorsWithAdminRights();
-	        	List<User> students = group.getStudentsWithAccess();
-            	outputArea.appendText("\n*********************************************\n");
-	        	outputArea.appendText("All users in : \"" + group.getGroupName() + "\"\n");
-            	outputArea.appendText("\nUsers in Admin list:\n");
-	        	for (User u : admins) {
-	            	outputArea.appendText("Name: " + u.getFirstName() + " Username: " + u.getUsername() + "\n");
-	        	} 
-	        	outputArea.appendText("\nUsers in Instructors with access list: \n");
-	        	for (User u : instrWithAccess) {
-	            	outputArea.appendText("Name: " + u.getFirstName() + " Username: " + u.getUsername() + "\n");
-	        	} 
-	        	outputArea.appendText("\nUsers in Instructors with admin privileges list: \n");
-	        	for (User u : instrWithAdmin) {
-	            	outputArea.appendText("Name: " + u.getFirstName() + " Username: " + u.getUsername() + "\n");
-	        	} 
-	        	outputArea.appendText("\nUsers in Students list: \n");
-	        	for (User u : students) {
-	            	outputArea.appendText("Name: " + u.getFirstName() + " Username: " + u.getUsername() + "\n");
-	        	} 
-            	outputArea.appendText("\n*********************************************\n");
-	        	nameInput.clear();
+        		if (group.doesAdminExist(currentUser) || group.doesInstrExistInAdminRightsList(currentUser)) { // see if user has the privileges to view the group
+		        	// retrieve all lists
+		        	List<User> admins = group.getAdmins();
+		        	List<User> instrWithAccess = group.getInstructorsWithAccess();
+		        	List<User> instrWithAdmin = group.getInstructorsWithAdminRights();
+		        	List<User> students = group.getStudentsWithAccess();
+	            	outputArea.appendText("\n*********************************************\n");
+		        	outputArea.appendText("All users in : \"" + group.getGroupName() + "\"\n");
+	            	outputArea.appendText("\nUsers in Admin list:\n");
+		        	for (User u : admins) {
+		            	outputArea.appendText("Name: " + u.getFirstName() + " Username: " + u.getUsername() + "\n");
+		        	} 
+		        	outputArea.appendText("\nUsers in Instructors with access list: \n");
+		        	for (User u : instrWithAccess) {
+		            	outputArea.appendText("Name: " + u.getFirstName() + " Username: " + u.getUsername() + "\n");
+		        	} 
+		        	outputArea.appendText("\nUsers in Instructors with admin privileges list: \n");
+		        	for (User u : instrWithAdmin) {
+		            	outputArea.appendText("Name: " + u.getFirstName() + " Username: " + u.getUsername() + "\n");
+		        	} 
+		        	outputArea.appendText("\nUsers in Students list: \n");
+		        	for (User u : students) {
+		            	outputArea.appendText("Name: " + u.getFirstName() + " Username: " + u.getUsername() + "\n");
+		        	} 
+	            	outputArea.appendText("\n*********************************************\n");
+		        	nameInput.clear();
+        		}
+        		else {
+        			outputArea.appendText("User does not have admin privelages for \"" + groupName + "\"\n");
+        		}
         	}
         	else {
         		outputArea.appendText("Invalid group\n");
@@ -2635,14 +2696,19 @@ public class Main extends Application {
         	}  
         	// if group exists
         	if (group != null) {
-	        	// retrieve all lists
-	        	List<User> admins = group.getAdmins();
-            	outputArea.appendText("\n*********************************************\n");
-            	outputArea.appendText("All admins in group: \"" + group.getGroupName() + "\"\n");
-	        	for (User u : admins) {
-	            	outputArea.appendText("Name: " + u.getFirstName() + " Username: " + u.getUsername() + "\n");
-	        	} 
-            	outputArea.appendText("*********************************************\n");
+        		if (group.doesAdminExist(currentUser) || group.doesInstrExistInAdminRightsList(currentUser)) { // see if user has the privileges to view the group
+		        	// retrieve admin list
+		        	List<User> admins = group.getAdmins();
+	            	outputArea.appendText("\n*********************************************\n");
+	            	outputArea.appendText("All admins in group: \"" + group.getGroupName() + "\"\n");
+		        	for (User u : admins) {
+		            	outputArea.appendText("Name: " + u.getFirstName() + " Username: " + u.getUsername() + "\n");
+		        	} 
+	            	outputArea.appendText("*********************************************\n");
+        		}
+        		else {
+        			outputArea.appendText("User does not have admin privelages for \"" + groupName + "\"\n");
+        		}
 	        	nameInput.clear();
         	}
         	else {
@@ -2663,14 +2729,19 @@ public class Main extends Application {
         	}  
         	// if group exists
         	if (group != null) {
-	        	// retrieve all lists
-	        	List<User> instrWithAccess = group.getInstructorsWithAccess();
-            	outputArea.appendText("\n*********************************************\n");
-	        	outputArea.appendText("All instructors with article access in group: \"" + group.getGroupName() + "\"\n");
-	        	for (User u : instrWithAccess) {
-	            	outputArea.appendText("Name: " + u.getFirstName() + " Username: " + u.getUsername() + "\n");
-	        	} 
-            	outputArea.appendText("*********************************************\n");
+        		if (group.doesAdminExist(currentUser) || group.doesInstrExistInAdminRightsList(currentUser)) { // see if user has the privileges to view the group
+		        	// retrieve instr with access list
+		        	List<User> instrWithAccess = group.getInstructorsWithAccess();
+	            	outputArea.appendText("\n*********************************************\n");
+		        	outputArea.appendText("All instructors with article access in group: \"" + group.getGroupName() + "\"\n");
+		        	for (User u : instrWithAccess) {
+		            	outputArea.appendText("Name: " + u.getFirstName() + " Username: " + u.getUsername() + "\n");
+		        	} 
+	            	outputArea.appendText("*********************************************\n");
+        		}
+        		else {
+        			outputArea.appendText("User does not have admin privelages for \"" + groupName + "\"\n");
+        		}
 	        	nameInput.clear();
         	}
         	else {
@@ -2691,14 +2762,19 @@ public class Main extends Application {
         	}  
         	// if group exists
         	if (group != null) {
-	        	// retrieve all lists
-	        	List<User> instrWithAdmin = group.getInstructorsWithAdminRights();
-            	outputArea.appendText("\n*********************************************\n");
-	        	outputArea.appendText("All instructors with admin privileges in group: \"" + group.getGroupName() + "\"\n");
-	        	for (User u : instrWithAdmin) {
-	            	outputArea.appendText("Name: " + u.getFirstName() + " Username: " + u.getUsername() + "\n");
-	        	} 
-            	outputArea.appendText("*********************************************\n");
+        		if (group.doesAdminExist(currentUser) || group.doesInstrExistInAdminRightsList(currentUser)) { // see if user has the privileges to view the group
+		        	// retrieve instr with admin list
+		        	List<User> instrWithAdmin = group.getInstructorsWithAdminRights();
+	            	outputArea.appendText("\n*********************************************\n");
+		        	outputArea.appendText("All instructors with admin privileges in group: \"" + group.getGroupName() + "\"\n");
+		        	for (User u : instrWithAdmin) {
+		            	outputArea.appendText("Name: " + u.getFirstName() + " Username: " + u.getUsername() + "\n");
+		        	} 
+	            	outputArea.appendText("*********************************************\n");
+        		}
+        		else {
+        			outputArea.appendText("User does not have admin privelages for \"" + groupName + "\"\n");
+        		}
 	        	nameInput.clear();
         	}
         	else {
@@ -2719,14 +2795,19 @@ public class Main extends Application {
         	}  
         	// if group exists
         	if (group != null) {
-	        	// retrieve all lists
-	        	List<User> students = group.getStudentsWithAccess();
-            	outputArea.appendText("\n*********************************************\n");
-	        	outputArea.appendText("All students in group: \"" + group.getGroupName() + "\"\n");
-	        	for (User u : students) {
-	            	outputArea.appendText("Name: " + u.getFirstName() + " Username: " + u.getUsername() + "\n");
-	        	} 
-            	outputArea.appendText("*********************************************\n");
+	        	// retrieve student list
+        		if (group.doesAdminExist(currentUser) || group.doesInstrExistInAdminRightsList(currentUser)) { // see if user has the privileges to view the group
+		        	List<User> students = group.getStudentsWithAccess();
+	            	outputArea.appendText("\n*********************************************\n");
+		        	outputArea.appendText("All students in group: \"" + group.getGroupName() + "\"\n");
+		        	for (User u : students) {
+		            	outputArea.appendText("Name: " + u.getFirstName() + " Username: " + u.getUsername() + "\n");
+		        	} 
+	            	outputArea.appendText("*********************************************\n");
+        		}
+        		else {
+        			outputArea.appendText("User does not have admin privelages for \"" + groupName + "\"\n");
+        		}
 	        	nameInput.clear();
         	}
         	else {
@@ -2789,9 +2870,7 @@ public class Main extends Application {
         // Buttons
         Button addUser = new Button("Add User");
         Button removeUser = new Button("Remove User");
-        Button viewUsers = new Button("View Users");
         Button back = new Button("Back");
-
         addUser.setOnAction(e -> {
             // retrieve group
         	String groupName = groupNameInput.getText();
@@ -2813,13 +2892,13 @@ public class Main extends Application {
 		        	String username = usernameInput.getText();
 		        	User user = getUser(firstName, username);
 		        	String permissions = "";
-		        	boolean check = false;
 		        	// check if user exists
 		        	if (user != null) {
+		        		boolean check = false;
 			            if (listToggleGroup.getSelectedToggle() == adminListButton && (user.hasRole(Role.ADMIN))) {
 			            	permissions = "Admins";
 			            	// logic to add user to admins, first clear inputs
-			                group.addToAdmins(user);
+			                check = group.addToAdmins(user);
 			                groupNameInput.clear();
 			                firstNameInput.clear();
 			                usernameInput.clear();
@@ -2827,7 +2906,7 @@ public class Main extends Application {
 			            } else if (listToggleGroup.getSelectedToggle() == instructorsAccessButton && (user.hasRole(Role.INSTRUCTOR))) {
 			            	permissions = "Instructors with article access";
 			            	// logic to add user to instructorsWithAccess
-			            	group.addToInstrWithAccess(user);
+			            	check = group.addToInstrWithAccess(user);
 			            	groupNameInput.clear();
 			                firstNameInput.clear();
 			                usernameInput.clear();
@@ -2835,7 +2914,7 @@ public class Main extends Application {
 			            } else if (listToggleGroup.getSelectedToggle() == instructorsAdminButton && (user.hasRole(Role.INSTRUCTOR))) {
 			            	permissions = "Instructors with admin permissions";
 			            	// logic to add user to instructorsWithAdminRights
-			            	group.addToInstrWithAdminRights(user);
+			            	check = group.addToInstrWithAdminRights(user);
 			            	groupNameInput.clear();
 			                firstNameInput.clear();
 			                usernameInput.clear();
@@ -2843,7 +2922,7 @@ public class Main extends Application {
 			            } else if (listToggleGroup.getSelectedToggle() == studentListButton && (user.hasRole(Role.STUDENT))) {
 			            	permissions = "Students";
 			            	// Add logic to add user to studentsWithViewingRights
-			            	group.addToStudentList(user);
+			            	check = group.addToStudentList(user);
 			            	groupNameInput.clear();
 			                firstNameInput.clear();
 			                usernameInput.clear();
@@ -2898,6 +2977,7 @@ public class Main extends Application {
 		        	String permissions = "";
 		        	// check if user exists
 		        	if (user != null) {
+		        		String selectedGroup = "";
 			            if (listToggleGroup.getSelectedToggle() == adminListButton && group.doesAdminExist(user)) {
 			            	permissions = "Admin group";
 			            	// logic to remove user from admins, first clear inputs
@@ -2972,7 +3052,6 @@ public class Main extends Application {
             studentListButton,
             addUser,
             removeUser,
-            viewUsers,
             back
         );
         optionBox.setAlignment(Pos.CENTER);
@@ -3019,17 +3098,23 @@ public class Main extends Application {
             if (group != null) {
             	// if article is valid
             	if (uniqueId != -1) {
-            		boolean check = true; 
-            		group.addToArticles(uniqueId);
+            		boolean check = group.addToArticles(uniqueId);
             		groupNameInput.clear();
             		seqNumberInput.clear();
-            		// article was successfully added
-            		if (check) {
-            			outputArea.appendText("Article successfully added to \"" + groupName + "\".\n");
+            		System.out.println("does article exist: " + group.doesArticleExist(uniqueId));
+            		if (check) { // if article was added
+	             		outputArea.appendText("Article successfully added to \"" + groupName + "\".\n");
+	            		List<Long> articleList = group.getArticles();
+	            		System.out.println("beg of list of articles in group");
+	            		for (Long l : articleList) {
+	                		System.out.println(l);
+	            		}
+	            		System.out.println("end of list of articles in group");
+	            	}
+            		else { // article already exists
+            			outputArea.appendText("Article already exists in \"" + groupName + "\".\n");
             		}
-            		else {
-            			outputArea.appendText("Article doesn't exist in \"" + groupName + "\".\n");
-            		}
+
             	}
             	else {
             		outputArea.appendText("Invalid article.\n");
@@ -3078,11 +3163,11 @@ public class Main extends Application {
         TextField seqNumberInput = new TextField();
         
         // Buttons
-        Button addButton = new Button("Add Article");
+        Button removeButton = new Button("Remove Article");
         Button backButton = new Button("Back");
         
         // Set button actions
-        addButton.setOnAction(e -> {
+        removeButton.setOnAction(e -> {
             String groupName = groupNameInput.getText();
             int seqNumberInt = Integer.parseInt(seqNumberInput.getText());
             if (groupName.isEmpty() || seqNumberInt == 0) {
@@ -3102,19 +3187,21 @@ public class Main extends Application {
             if (group != null) {
             	// if article is valid
             	if (uniqueId != -1) {
-            		boolean check = true;
-            		group.removeFromArticles(uniqueId);
-            		List<Long> temp = group.getArticles();
-            		for (Long i : temp) {
-            			System.out.println(i);
-            		}
+            		boolean check = group.removeFromArticles(uniqueId);
             		groupNameInput.clear();
             		seqNumberInput.clear();
-            		if (check) {
-            			outputArea.appendText("Article successfully removed from \"" + groupName + "\".\n");
+            		System.out.println("does article exist: " + group.doesArticleExist(uniqueId));
+            		if (check) { // article was deleted
+	            		List<Long> articleList = group.getArticles();
+	            		System.out.println("beg of list of articles in group");
+	            		for (Long l : articleList) {
+	                		System.out.println(l);
+	            		}
+	            		System.out.println("end of list of articles in group");
+	            		outputArea.appendText("Article successfully removed from \"" + groupName + "\".\n");
             		}
-            		else {
-            			outputArea.appendText("Article doesn't exist in \"" + groupName + "\".\n");
+            		else { // article wasnt found in list
+	            		outputArea.appendText("Article wasn't found in \"" + groupName + "\".\n");
             		}
             	}
             	else {
@@ -3140,14 +3227,15 @@ public class Main extends Application {
             groupNameInput,
             seqNumberLabel,
             seqNumberInput,
-            addButton,
+            removeButton,
             backButton
         );
         
         optionBox.setAlignment(Pos.CENTER);
         ((VBox) outputArea.getParent()).getChildren().add(optionBox);
     }
-    // method for general article group options
+    
+ // method for general article group options
     private void generalArticleGroupOptions() {
     	outputArea.appendText("Select an option\n");
         
@@ -3158,12 +3246,11 @@ public class Main extends Application {
         // All choices for article settings
         Button createGroup = new Button("Create General article group");
         Button viewGroup = new Button("View General article group");
-        Button editGroup = new Button("Edit a Special Access Group");
-        Button articeGroup = new Button("Add article to a Special Access Group");
+        Button editGroup = new Button("Edit a General Article Group");
         Button deleteGroup = new Button("Delete General article group");
         Button backupGroup = new Button("Backup Special Access Group");
         Button restoreGroup = new Button("Restore Special Access Group");
-        Button printGroups = new Button("Print All Special Access Groups"); // New button
+        Button printGroups = new Button("FIXME"); // New button
         Button back = new Button("Back");
         
         // Set button actions
@@ -3176,14 +3263,11 @@ public class Main extends Application {
         editGroup.setOnAction(e -> {
         	editGeneralArticleGroup();
 		});
-        articeGroup.setOnAction(e -> {
-        	addArticleToSpecialAccessGroup();
-        });
 		deleteGroup.setOnAction(e -> {
 			deleteGeneralArticleGroup();
 		});
 		printGroups.setOnAction(e -> { 
-			printSpecialAccessGroups();
+			//printSpecialAccessGroups();
 		});
        
         back.setOnAction(e -> {

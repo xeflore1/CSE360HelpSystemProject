@@ -34,6 +34,9 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+
 /*******
  * <p> Main class </p>
  * 
@@ -372,8 +375,7 @@ public class Main extends Application {
             );
         } 
         else if (currRole == Role.INSTRUCTOR) {  	
-        	// Button declaration
-        	
+        	// Button declaration        	
         	optionBox.getChildren().addAll(
                     new Label("Select an option:"),
                     aritcleButton,
@@ -1399,6 +1401,7 @@ public class Main extends Application {
         // All choices for article settings
         Button listArticles = new Button("List articles");
         Button listArticlesByGroup = new Button("List articles by group");
+    	Button listArticlesBySpecialGroup = new Button("View articles by special access group");
         Button viewArticle = new Button("View an article");
         Button viewByUniqueLong = new Button("View articles by unique long identifier");
         Button viewByLevelAndGroup = new Button("View articles by level and group");
@@ -1426,6 +1429,14 @@ public class Main extends Application {
 				listByGroup();
 			} catch (Exception e1) {
 				outputArea.appendText("error calling list articles by group\n");
+				e1.printStackTrace();
+			}
+        });
+        listArticlesBySpecialGroup.setOnAction(e -> {
+        	try {
+				listBySpecialAccessGroup();
+			} catch (Exception e1) {
+				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
         });
@@ -1523,6 +1534,7 @@ public class Main extends Application {
     	            new Label("Select an option:"),
     	            listArticles,
     	            listArticlesByGroup,
+    	            listArticlesBySpecialGroup,
     	            viewArticle,
     	            listByLevel,
     	            viewByUniqueLong,
@@ -1689,6 +1701,69 @@ public class Main extends Application {
         });
     }
 
+    // method lists articles by special access group
+    private void listBySpecialAccessGroup() throws Exception {
+        
+        // Create input fields for sequence number
+    	Label group = new Label("Enter special access group:");
+        TextField groupInput = new TextField();
+        // Buttons
+    	Button listButton = new Button("List articles");
+    	Button backButton = new Button("Back");
+    	
+    	// Create a VBox for input fields
+        VBox listBox = new VBox(10, group, groupInput, listButton, backButton);
+        
+        listBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(listBox);
+        
+        clearPreviousOptionBox();
+        
+        // When list by group is pressed
+        listButton.setOnAction(event -> {
+        	// get num input
+        	SpecialAccessGroup specialGroup = null;
+        	String groupName = groupInput.getText();
+        	// find matching group
+        	for (SpecialAccessGroup curr : specialAccessGroupsList) {
+        		if (curr.getGroupName().equals(groupName)) {
+        			specialGroup = curr;
+        		}
+        	}
+        	// if there was a matching special group
+        	if (specialGroup != null) {
+        		// list of articles
+        		List<Long> articleList = specialGroup.getArticles();
+        		// print each article
+        		outputArea.appendText("Articles in special access group [" + groupName + "]\n");
+        		for (Long id : articleList) {
+        			try {
+						outputArea.appendText(databaseHelper.listArticlesByUniqueLongId(id) + "\n");
+					} catch (SQLException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+        		}
+        		groupInput.clear();
+        	}
+        	// group doesn't exist
+        	else {
+        		outputArea.appendText("Special access group doesn't exist\n");
+        	}
+        });
+        
+        // when back is pressed
+        backButton.setOnAction(event -> {
+        	((VBox) outputArea.getParent()).getChildren().remove(listBox);
+            try {
+            	((VBox) outputArea.getParent()).getChildren().remove(listBox);
+				showUserOptions(currRole);
+			} catch (Exception e) {
+				outputArea.appendText("Error going back\n");
+				e.printStackTrace();
+			}  
+        });
+    }
     /*********
      * This is the method used to list articles by level.
      * Exception handling takes care of any database errors
@@ -2512,8 +2587,9 @@ public class Main extends Application {
         Button editGroup = new Button("Edit a Special Access Group");
         Button articeAdd = new Button("Add article to a Special Access Group");
         Button deleteRemove = new Button("Delete article from Special Access Group");
-        Button backupGroup = new Button("Backup Special Access Group");
-        Button restoreGroup = new Button("Restore Special Access Group");
+        Button deleteGroup = new Button("Delete special Access Article Group");
+        Button backupGroup = new Button("Backup Special Access Group articles");
+        Button restoreGroup = new Button("Restore Special Access Group articles");
         Button back = new Button("Back");
         
         // Set button actions
@@ -2532,7 +2608,20 @@ public class Main extends Application {
         deleteRemove.setOnAction(e -> {
 			removeArticleFromSpecialAccessGroup();
 		});
-       
+        deleteGroup.setOnAction(e -> {
+        	deleteSpecialAccessArticleGroup();
+        }); 
+        backupGroup.setOnAction(e -> {
+        	backupSpecialAccessArticleGroup();
+        });
+        restoreGroup.setOnAction(e -> {
+        	try {
+				restoreArticles();
+			} catch (Exception e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+        });
         back.setOnAction(e -> {
         	//((VBox) outputArea.getParent()).getChildren().remove(deleteBox);
             showUserOptions(currRole);  // Show options again when going back
@@ -2546,6 +2635,9 @@ public class Main extends Application {
 	            editGroup,
 	            articeAdd,
 	            deleteRemove,
+	            backupGroup,
+	            restoreGroup,
+	            deleteGroup,
 	            back
 	        );
         }
@@ -2554,6 +2646,8 @@ public class Main extends Application {
 	            new Label("Select an option:"),
 	            viewGroup,
 	            editGroup,
+	            backupGroup,
+	            restoreGroup,
 	            back
 	        );
         }
@@ -3235,7 +3329,127 @@ public class Main extends Application {
         ((VBox) outputArea.getParent()).getChildren().add(optionBox);
     }
     
- // method for general article group options
+    private void deleteSpecialAccessArticleGroup() {
+    	outputArea.appendText("Delete a special access article group\n");
+    	clearPreviousOptionBox();
+    	optionBox.getChildren().clear();
+    	
+    	Label deleteLabel = new Label("Enter name of special access article group to delete");
+    	TextField groupNameField = new TextField();
+    	
+    	Button delete = new Button("Delete");
+    	Button back = new Button("Back");
+    	
+    	delete.setOnAction(e -> {
+    		String groupName = groupNameField.getText();
+    		SpecialAccessGroup group = null;
+    		for (SpecialAccessGroup g : specialAccessGroupsList) {
+    			if (g.getGroupName().equals(groupName)) {
+    				group = g;
+    			}
+    		}
+    		if (specialAccessGroupsList.remove(group)) {
+    			outputArea.appendText("Special access article group " + "[" + groupName + "]"
+    					+ " has been deleted\n");
+    		}
+    		else {
+    			outputArea.appendText("Special access article group " + "[" + groupName + "]"
+    					+ " does not exist\n");
+    		}
+    	});
+    	
+    	back.setOnAction(e -> {
+    		try {
+                specialAccessGroupOptions();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+    	});
+    	
+    	optionBox.getChildren().addAll(
+    			deleteLabel,
+    			groupNameField,
+    			delete,
+    			back
+    	);
+    	optionBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(optionBox);
+    }
+    
+    private void backupSpecialAccessArticleGroup() {
+    	outputArea.appendText("Backup articles\n");
+        
+    	// Create input fields for file name
+    	Label file = new Label("Enter backup filename: \n");
+        TextField fileInput = new TextField();
+        Label group = new Label("Enter special access group name: \n");
+        TextField groupInput = new TextField();
+        // Buttons
+    	Button backupButton = new Button("Backup special access group articles to file");
+    	Button backButton = new Button("Back");
+    	
+    	// Create a VBox for input fields
+        VBox backupBox = new VBox(10, file, fileInput, group, groupInput, backupButton, backButton);
+        
+        backupBox.setAlignment(Pos.CENTER);
+        ((VBox) outputArea.getParent()).getChildren().add(backupBox);
+        
+        clearPreviousOptionBox();
+        
+        backupButton.setOnAction(event -> {
+        	String groupStr = groupInput.getText();
+        	// If no group was specified
+        	if (groupStr.isEmpty()) {
+	        	 outputArea.appendText("Enter a group name\n");
+        	}
+        	else {
+        		SpecialAccessGroup specialGroup = null;
+        		List<Long> articleList = null;
+            	for (SpecialAccessGroup current : specialAccessGroupsList) {
+            		if (current.getGroupName().equals(groupStr)) {
+            			specialGroup = current;
+            			articleList = specialGroup.getArticles();
+            		}
+            	}
+            	if (specialGroup != null) {
+	        		try {
+						databaseHelper.backupArticlesBySpecialAccessGroup(fileInput.getText(), articleList); // Operation outsourced to DatabaseHelper.java
+						outputArea.appendText("Backed up articles of special access group: " + groupStr + " to: " + fileInput.getText() + "\n");
+						((VBox) outputArea.getParent()).getChildren().remove(backupBox);
+						articleOptions();
+					} catch (SQLException e) {
+						outputArea.appendText("Error calling backup articles\n");
+						e.printStackTrace();
+					} catch (IOException e) {
+						outputArea.appendText("Error gettting text\n");
+						e.printStackTrace();
+					} catch (Exception e) {
+						outputArea.appendText("Error going back to article options\n");
+						e.printStackTrace();
+					} 
+            	}
+            	else {
+            		outputArea.appendText("Group doesn't exist\n");
+            	}
+        	}
+        });
+        
+        backButton.setOnAction(event -> {
+        	((VBox) outputArea.getParent()).getChildren().remove(backupBox);
+            try {
+            	((VBox) outputArea.getParent()).getChildren().remove(backupBox);
+				articleOptions();
+			} catch (Exception e) {
+				outputArea.appendText("Error going back\n");
+				e.printStackTrace();
+			}
+        });
+    }
+    
+    private void restoreSpecialAccessArticleGroup() {
+    	
+    }
+    // method for general article group options
     private void generalArticleGroupOptions() {
     	outputArea.appendText("Select an option\n");
         

@@ -19,6 +19,9 @@ import org.bouncycastle.util.Arrays;
 import Encryption.EncryptionHelper;
 import Encryption.EncryptionUtils;
 
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+
 /*******
  * <p> DatabaseHelper class </p>
  * 
@@ -1179,7 +1182,67 @@ class DatabaseHelper {
             throw e;
         }
     }
-    
+    // backs up articles in the list of unique ids
+    public void backupArticlesBySpecialAccessGroup(String filename, List<Long> articleIds) throws SQLException, IOException {
+        // Construct a query with the IN clause to handle multiple IDs
+        StringBuilder queryBuilder = new StringBuilder("SELECT * FROM help_articles WHERE unique_id IN (");
+        
+        // Add placeholders for each article ID
+        for (int i = 0; i < articleIds.size(); i++) {
+            queryBuilder.append("?");
+            if (i < articleIds.size() - 1) {
+                queryBuilder.append(",");
+            }
+        }
+        queryBuilder.append(")");
+
+        // Prepare the SQL query
+        String query = queryBuilder.toString();
+
+        try (PreparedStatement pstmt = connection.prepareStatement(query);
+             BufferedWriter writer = new BufferedWriter(new FileWriter(filename, true))) { // Append mode
+            // Set the values for the placeholders in the PreparedStatement
+            for (int i = 0; i < articleIds.size(); i++) {
+                pstmt.setLong(i + 1, articleIds.get(i)); // Set each article ID
+            }
+
+            ResultSet rs = pstmt.executeQuery();
+
+            boolean hasArticles = false;
+
+            while (rs.next()) {
+                hasArticles = true;
+
+                // Create the line to be written
+                String line = rs.getString("level") + ","
+                        + rs.getString("groupId") + ","
+                        + rs.getString("title") + ","
+                        + rs.getString("authors") + ","
+                        + rs.getString("abstract") + ","
+                        + rs.getString("keywords") + ","
+                        + rs.getString("body") + ","
+                        + rs.getString("references");
+
+                // Debug print to check the format of the line
+                System.out.println("Writing line to backup: " + line);
+
+                // Write the line to the file
+                writer.write(line);
+                writer.newLine();
+            }
+
+            // If no articles were found, add a message to the file
+            if (!hasArticles) {
+                System.out.println("No articles found for the given IDs");
+                writer.write("No articles found for the given IDs");
+                writer.newLine();
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Error backing up articles: " + e.getMessage());
+            throw e;
+        }
+    }
     /*********
      * This is the method used to restore articles
      * Exception handling takes care of any database errors

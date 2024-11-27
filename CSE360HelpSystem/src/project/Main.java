@@ -1983,7 +1983,7 @@ public class Main extends Application {
     			}
             }
             else { // article belongs to a special access group
-	            if (specialGroup.doesStudentExistInStudentList(currentUser)) { // if student exists in special access group
+	            if (specialGroup.doesStudentExistInStudentList(currentUser) || specialGroup.doesInstrExistInAccessList(currentUser)) { // if student exists in special access group
 	            	try {
 	            		// call list by group method
 	    				String list = databaseHelper.getFormattedArticleWithSeq(seqNumId);

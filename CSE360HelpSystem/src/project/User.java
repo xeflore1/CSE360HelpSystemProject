@@ -2,6 +2,7 @@ package project;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.Map;
 import java.util.Optional;
@@ -244,23 +245,20 @@ public class User {
         return roles;
     }
 
-    public String getSpecialAccessGroups() {
-        if (specialAccessGroups == null || specialAccessGroups.isEmpty()) {
+    // returns the special access group a user belongs to
+    public String getSpecialAccessGroups(List<SpecialAccessGroup> specialList, User currentUser) {
+        if (specialList.isEmpty()) {
             return "No special access groups assigned.";
         }
         
         StringBuilder result = new StringBuilder("Special Access Groups:\n");
-        specialAccessGroups.forEach((group, articles) -> {
-            result.append("Group: ").append(group).append("\n");
-            result.append("Articles: ");
-            
-            if (articles.isEmpty()) {
-                result.append("No articles\n");
-            } else {
-                articles.forEach(article -> result.append(article).append(" "));
-                result.append("\n");
-            }
-        });
+        for (SpecialAccessGroup i : specialList) {
+        	if (i.doesAdminExist(currentUser) || i.doesInstrExistInAccessList(currentUser) || 
+        			i.doesInstrExistInAdminRightsList(currentUser) || i.doesStudentExistInStudentList(currentUser)) {
+        		result.append("[" + i.getGroupName() + "]\n");
+        	}
+        }
+        
         return result.toString();
     }
 

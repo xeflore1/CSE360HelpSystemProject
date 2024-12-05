@@ -68,7 +68,7 @@ class DatabaseHelper {
 		}
 	}
 
-	/*********
+     /*********
      * This is the method used to create tables in the database 
      * Exception handling takes care of any database errors
      */
@@ -110,7 +110,7 @@ class DatabaseHelper {
         statement.execute(specialAccessGroupTable);
         System.out.println("after group table");
         // table for special articles list
-     // Table for special articles
+        // Table for special articles
         String specialArticlesTable = "CREATE TABLE IF NOT EXISTS special_articles ("
                 + "id INT AUTO_INCREMENT PRIMARY KEY, "
                 + "group_name VARCHAR(255) NOT NULL, "
@@ -151,7 +151,7 @@ class DatabaseHelper {
         statement.execute(studentsViewingTable); 
 	}
 
-	/*********
+     /*********
      * This is the method used when the program starts, to retrieve all users from database 
      * Exception handling takes care of any database errors
      * 
@@ -244,7 +244,12 @@ class DatabaseHelper {
 	    }
 	}
 	
-	// this method loads the special access group
+	/*********
+        * This is the method used to load the list of special access groups
+        * Exception handling takes care of any database errors
+        * 
+        * @return special access group    	list of all special access
+        */
 	public List<SpecialAccessGroup> loadSpecialAccessGroups() throws SQLException {
 	    List<SpecialAccessGroup> specialAccessGroups = new ArrayList<>();
 
@@ -389,7 +394,14 @@ class DatabaseHelper {
 	    return specialAccessGroups;
 	} 
 
-	// Helper method to find a user by username and first name
+	/*********
+        * This is a helper method used to find a user
+        * Exception handling takes care of any database errors
+        * 
+        * @param username   	username
+	* @param firstName 	first name
+ 	* @return User		User
+        */
 	private User findUser(String username, String firstName) {
 	    for (User curr : userList) {
 	        if (curr.getFirstName().equals(firstName) && curr.getUsername().equals(username)) {
@@ -399,7 +411,12 @@ class DatabaseHelper {
 	    return null;
 	}
 
-	// This method saves the special access group to the database
+	/*********
+        * This is a method used to save special access groups to the database
+        * Exception handling takes care of any database errors
+        * 
+        * @param specialAccessGroups		list of special access groups
+        */
 	public void saveSpecialAccessGroupsToDatabase(List<SpecialAccessGroup> specialAccessGroups) throws SQLException {
 	    // SQL queries for insertion
 	    String insertGroupQuery = "INSERT INTO special_access_groups (group_name) VALUES (?)";
@@ -488,12 +505,13 @@ class DatabaseHelper {
 	        }
 	    }
 	}
-	/*********
-     * This is the method used to check if the database is empty
-     * Exception handling takes care of any database errors
-     * 
-     * @return boolean
-     */
+	
+       /*********
+       * This is the method used to check if the database is empty
+       * Exception handling takes care of any database errors
+       * 
+       * @return boolean
+       */
 	public boolean isDatabaseEmpty() throws SQLException {
 		String query = "SELECT COUNT(*) AS count FROM cse360users";
 		ResultSet resultSet = statement.executeQuery(query);
@@ -737,7 +755,7 @@ class DatabaseHelper {
      * @param groupId			identifiers used for groups of related articles
      * @param title				title of article
      * @param authors			authors of article
-     * @param articleAbstract	short description about article
+     * @param articleAbstract		short description about article
      * @param keywords			words used to process searches
      * @param body				body of help article
      * @param references		reference links or similar materials
@@ -783,6 +801,7 @@ class DatabaseHelper {
 	
     /*********
      * This is the method used to clear the char array
+     * @param array			character array
      */
     private void clearCharArray(char[] array) {
         Arrays.fill(array, '\u0000');  // Clear char array after use
@@ -811,7 +830,6 @@ class DatabaseHelper {
     }
 
     /*********
-
      * This is the method used to list the articles by group
      * Exception handling takes care of any database errors
      * 
@@ -863,7 +881,6 @@ class DatabaseHelper {
 
     
     /*********
-
      * This is the method used to list the articles by level
      * Exception handling takes care of any database errors
      * 
@@ -1182,7 +1199,14 @@ class DatabaseHelper {
             throw e;
         }
     }
-    // backs up articles in the list of unique ids
+
+    /*********
+     * This is the method used to backup articles by special access groups
+     * Exception handling takes care of any database errors
+     * 
+     * @param filename 		 	filename used to back up
+     * @param articleId		  	articleId used for list of articles
+     */
     public void backupArticlesBySpecialAccessGroup(String filename, List<Long> articleIds) throws SQLException, IOException {
         // Construct a query with the IN clause to handle multiple IDs
         StringBuilder queryBuilder = new StringBuilder("SELECT * FROM help_articles WHERE unique_id IN (");
@@ -1270,7 +1294,7 @@ class DatabaseHelper {
 
 
     /*********
-     * This is the method used to load selected article previously saved to the database
+     * This is the method used to merge selected article previously saved to the database
      * Exception handling takes care of any database errors
      * 
      * @param filename 		 filename used to load
@@ -1405,13 +1429,10 @@ class DatabaseHelper {
     }
     
     /*********
-     * This is the method used to close the connection of database
-     * Exception handling takes care of any database errors
+     * This is the method used to get a unique id by the id
      * 
+     * @return articleId		long id
      */
-	
-    // method used in adding articles to special access groups
-    // returns an articles unique id given seq num
     public long getUniqueIdById(int id) {
         String query = "SELECT unique_id FROM help_articles WHERE id = ?";
         try (PreparedStatement statement = connection.prepareStatement(query)) {
@@ -1429,7 +1450,13 @@ class DatabaseHelper {
         return -1; // Return -1 if the article is not found or an error occurs
     }
     
-    // method returns an articles long id given its title and author
+    /*********
+     * This is the method used to get a unique id by title and author
+     * 
+     * @param title 			string of title
+     * @param author 			string of author
+     * @return articleId		long id
+     */
     public long getUniqueIdByTitleAndAuthor(String title, String author) {
         String query = "SELECT unique_id FROM help_articles WHERE title = ? AND authors = ?";
         try (PreparedStatement statement = connection.prepareStatement(query)) {
@@ -1447,8 +1474,14 @@ class DatabaseHelper {
         }
         return -1; // Return -1 if the article is not found or an error occurs
     }
-    
- // method updates an articles group given its sequence num
+
+    /*********
+     * This is the method used to update article groupId given seqnum
+     * Exception handling takes care of any database errors
+     *
+     * @param id 			int of id
+     * @param newGroup 			string of newGroup
+     */
     public void updateArticleGroupId(int id, String newGroup) throws SQLException {
         String updateQuery = "UPDATE help_articles SET groupId = ? WHERE id = ?";
 
@@ -1470,7 +1503,13 @@ class DatabaseHelper {
         }
     }
     
-    // method removes the group for the given article
+    /*********
+     * This is the method used to reset article groupId given group
+     * Exception handling takes care of any database errors
+     *
+     * @param id 			int of id
+     * @param group 			string of group
+     */
     public void resetArticleGroupId(int id, String group) throws SQLException {
         String selectQuery = "SELECT groupId FROM help_articles WHERE id = ?";
         String updateQuery = "UPDATE help_articles SET groupId = ? WHERE id = ?";
@@ -1508,7 +1547,12 @@ class DatabaseHelper {
         }
     }
     
-    // resets the group of all articles that have a matching group
+    /*********
+     * This is the method used to reset articles by groupId
+     * Exception handling takes care of any database errors
+     * 
+     * @param groupId 			string of group
+     */
     public void resetArticlesByGroupId(String groupId) throws SQLException {
         String selectQuery = "SELECT id FROM help_articles WHERE groupId = ?";
         String updateQuery = "UPDATE help_articles SET groupId = '' WHERE id = ?";
@@ -1544,7 +1588,11 @@ class DatabaseHelper {
             throw e;
         }
     }
-    
+
+    /*********
+     * This is the method used to close the connection to the database
+     *
+     */
     public void closeConnection() {
 		try{ 
 			if(statement!=null) statement.close(); 

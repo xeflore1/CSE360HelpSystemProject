@@ -1037,10 +1037,11 @@ public class Main extends Application {
     }
     
     /*********
-     * This is the method used for generating a random string for invite code and OTPs
+     * This is the method used for getting a user based on name and username
+     * @param name			string of name
+     * @param username			string of username
+     * @return User			User
      */
-    
-    // gets user given their username and first name
     private User getUser(String name, String username) {
     	for (User user : userList) {
     		if (user.getFirstName().equals(name) && user.getUsername().equals(username)) {
@@ -1049,7 +1050,12 @@ public class Main extends Application {
     	}
     	return null;
     }
-    
+
+    /*********
+    * This is the method used for generating a random string for invite code and OTPs
+    * @param length			int of length
+    * @return random string		random string
+    */
     private String generateRandomString(int length) {
         String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"; // Adjust characters as needed
         StringBuilder otpBuilder = new StringBuilder(length);
@@ -1193,6 +1199,7 @@ public class Main extends Application {
      * This is the method that gets the selected role from the rolegroup
      * 
      * @param roleGroup      The toggle group for roles
+     * @return Role 	     Role
      */
     private Role getSelectedRole(ToggleGroup roleGroup) {
         RadioButton selectedRadio = (RadioButton) roleGroup.getSelectedToggle();
@@ -1214,6 +1221,7 @@ public class Main extends Application {
      * 
      * @param username      string username that is inputted
      * @param userList      list of type users
+     * @return User
      */
     private User findUserByUsername(String username, List<User> userList) {
         // Implement this method to find and return a user by their username
@@ -1701,7 +1709,10 @@ public class Main extends Application {
         });
     }
 
-    // method lists articles by special access group
+    /*********
+     * This is the method used to list articles by special access group.
+     * Exception handling takes care of any database errors
+     */
     private void listBySpecialAccessGroup() throws Exception {
         
         // Create input fields for sequence number
@@ -1823,7 +1834,6 @@ public class Main extends Application {
      * This is the method used to list articles by Unique Long Id.
      * Exception handling takes care of any database errors
      */
-    // FIXME: ENWNEWNENWENWNEWNENWENWENWENWNENWENWENWNE
 
     private void listByUniqueLongId() throws Exception {
         
@@ -1878,7 +1888,6 @@ public class Main extends Application {
      * This is the method used to list articles by level and group.
      * Exception handling takes care of any database errors
      */
-    // FIXME: ENWNEWNENWENWNEWNENWENWENWENWNENWENWENWNE
 
     private void listByLevelAndGroup() throws Exception {
         
@@ -1936,7 +1945,6 @@ public class Main extends Application {
      * This is the method used to list an article in detail by sequence number.
      * Exception handling takes care of any database errors
      */
-    // FIXME: ENWNEWNENWENWNEWNENWENWENWENWNENWENWENWNE
 
     private void listBySeqNum() throws Exception {
         
@@ -2393,9 +2401,9 @@ public class Main extends Application {
         });
     }    
     
-    // method for sending a generic message 
-    // FIXME: ENWNEWNENWENWNEWNENWENWENWENWNENWENWENWNE
-
+    /*********
+     * This is the method used to send a generic message
+     */
     private void sendGenericMessage() {
         // Label to prompt the user
         Label promptLabel = new Label("Enter your question: ");
@@ -2442,8 +2450,9 @@ public class Main extends Application {
         });
     }
     
-    // method for sending a specific message
-    // FIXME: ENWNEWNENWENWNEWNENWENWENWENWNENWENWENWNE
+    /*********
+     * This is the method used to send a specific message
+     */
     private void sendSpecificMessage() {
         // Label to prompt the user
         Label promptLabel = new Label("Enter unavailable info: ");
@@ -2490,8 +2499,9 @@ public class Main extends Application {
         });
     }
 
-    // article list function for students
-    // FIXME: ENWNEWNENWENWNEWNENWENWENWENWNENWENWENWNE
+    /*********
+     * This is the method used to determine the student list articles
+     */
     private void studentListArticles() {
         // Labels and input fields for each search criterion
         Label title = new Label("Select an option ");
@@ -2571,9 +2581,9 @@ public class Main extends Application {
         });
     }
     
-    // options list for special access groups
-    // FIXME: ENWNEWNENWENWNEWNENWENWENWENWNENWENWENWNE
-
+    /*********
+     * This is the method used to determine the special access group options
+     */
     private void specialAccessGroupOptions() throws Exception {
     	outputArea.appendText("Select an option\n");
         
@@ -2656,8 +2666,9 @@ public class Main extends Application {
         ((VBox) outputArea.getParent()).getChildren().add(optionBox);
     }
     
-    // method to create a special access group
-    // FIXME: ENWNEWNENWENWENWENWNEWNENWENW
+    /*********
+     * This is the method used to create a special access group
+     */
     private void createSpecialAccessGroup() {
     	outputArea.appendText("Enter name for new Special Access Group\n");
     	
@@ -2709,8 +2720,10 @@ public class Main extends Application {
         optionBox.setAlignment(Pos.CENTER);
         ((VBox) outputArea.getParent()).getChildren().add(optionBox);  
     }
-    // method to view a special access group
-    // FIXME: ENWNEWNENWENWENWENWNEWNENWENW finish actual viewing stuff
+	
+    /*********
+     * This is the method used to view a special access group
+     */
     private void viewSpecialAccessGroup() {
     	outputArea.appendText("Enter name group name to be viewed\n");
     	
@@ -2954,8 +2967,10 @@ public class Main extends Application {
         optionBox.setAlignment(Pos.CENTER);
         ((VBox) outputArea.getParent()).getChildren().add(optionBox);  
     }
-    // method to edit a special access group
-    // FIXME: ENWNEWNENWENWENWENWNEWNENWENW
+
+    /*********
+     * This is the method used to edit a special access group
+     */
     private void editSpecialAccessGroup() {
         outputArea.appendText("Edit Special Access Group Permissions\n");
 
@@ -3174,8 +3189,9 @@ public class Main extends Application {
         ((VBox) outputArea.getParent()).getChildren().add(optionBox);
     }
     
-    // method to add an article to a special access group
-    // FIXME: ENWNEWNENWENWENWENWNEWNENWENW
+    /*********
+     * This is the method used to add an article to a special access group
+     */
     private void addArticleToSpecialAccessGroup() {
         outputArea.appendText("Add Article to Special Access Group\n");
         
@@ -3263,8 +3279,9 @@ public class Main extends Application {
         ((VBox) outputArea.getParent()).getChildren().add(optionBox);
     }
     
-    // method to add an article to a special access group
-    // FIXME: ENWNEWNENWENWENWENWNEWNENWENW
+    /*********
+     * This is the method used to remove an article from special access group
+     */
     private void removeArticleFromSpecialAccessGroup() {
         outputArea.appendText("Remove Article from Special Access Group\n");
         
@@ -3350,7 +3367,10 @@ public class Main extends Application {
         optionBox.setAlignment(Pos.CENTER);
         ((VBox) outputArea.getParent()).getChildren().add(optionBox);
     }
-    
+
+    /*********
+     * This is the method used to delete a special access article group
+     */
     private void deleteSpecialAccessArticleGroup() {
     	outputArea.appendText("Delete a special access article group\n");
     	clearPreviousOptionBox();
@@ -3468,9 +3488,7 @@ public class Main extends Application {
         });
     }
     
-    private void restoreSpecialAccessArticleGroup() {
-    	
-    }
+    
     // method for general article group options
     private void generalArticleGroupOptions() {
     	outputArea.appendText("Select an option\n");

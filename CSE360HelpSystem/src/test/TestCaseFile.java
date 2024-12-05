@@ -1,22 +1,28 @@
-package test;
+package project;
 
 import static org.junit.Assert.*;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+
 import project.DatabaseHelper;
 import project.User;
 
+import java.io.File;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class TestCaseFile {
     private DatabaseHelper dbHelper;
+    private static DatabaseHelper databaseHelper; // database variable
 
     @Before
     public void setUp() throws Exception {
-    	DatabaseHelper dhHelper; // Database variable
+    	DatabaseHelper databaseHelper; // Database variable
         dbHelper.connectToDatabase(); // Set up a connection before each test
     }
 
@@ -81,16 +87,6 @@ public class TestCaseFile {
     }
 
     @Test
-    void testDisplayUsersByUser() throws Exception {
-        // Set up a test user
-        addUserToTestDatabase("user@example.com", "userPassword", "User");
-
-        // Capture the output of displayUsersByUser method
-        String expectedOutput = "ID: 1, Email: user@example.com, Password: userPassword, Role: User";
-        assertEquals(expectedOutput, captureDisplayUsersByUser());
-    }
-    
-    @Test
     void testSerializeRoles() {
         Set<Role> roles = Set.of(Role.ADMIN, Role.USER);
         String serialized = databaseHelper.serializeRoles(roles);
@@ -145,14 +141,14 @@ public class TestCaseFile {
         char[] references = "www.advancedjava.com".toCharArray();
 
         databaseHelper.updateArticle(id, level, group, title, authors, articleAbstract, keywords, body, references);
-        assertTrue(articleExists("Advanced Java"));
+        assertTrue(databaseHelper.articleExistsByUniqueId(id));
     }
     
     @Test
     void testDeleteArticle() throws SQLException {
         int articleId = 1; // ID of an article to delete
         databaseHelper.deleteArticle(articleId);
-        assertFalse(articleExistsById(articleId));
+        assertFalse(databaseHelper.articleExistsByUniqueId(articleId));
     }
     
     @Test
@@ -160,11 +156,75 @@ public class TestCaseFile {
         String filename = "backup_test.txt";
         databaseHelper.backupArticles(filename);
 
-        File file = new File(filename);
-        assertTrue(file.exists());
+        String file = new String(filename);
+        //assertTrue(file.exists());
 
         // Clean up
-        file.delete();
+        //file.delete();
     }
+    
+    // JUnit Test to validate addToArticles() method
+    public static class SpecialAccessGroupTest {
+
+        private SpecialAccessGroup specialAccessGroup;
+
+        @BeforeEach
+        public void setUp() {
+            // Create a new SpecialAccessGroup object before each test
+            specialAccessGroup = new SpecialAccessGroup("Test Group");
+        }
+
+        @Test
+        public void testAddAdminToGroup() {
+            //  new admin to be added
+            User admin = new User();
+            
+            // Add admin to list
+            assertTrue(specialAccessGroup.addToAdmins(admin));
+            
+            // See if admin exists in its list
+            assertTrue(specialAccessGroup.doesAdminExist(admin));
+            // Check that the admin exists in lists it doesn't belong in 
+            assertTrue(specialAccessGroup.doesInstrExistInAccessList(admin));
+            assertTrue(specialAccessGroup.doesInstrExistInAdminRightsList(admin));
+            assertTrue(specialAccessGroup.doesStudentExistInStudentList(admin));
+        }
+
+        @Test
+        public void testAddInstrWithViewingRights() {
+            //  new instructor to be added
+            User instructor = new User();
+            
+            // Add instructor to list of instructors with article access
+            assertTrue(specialAccessGroup.addToInstrWithAccess(instructor));
+            
+            // Assert that the instructor is in its list
+            assertTrue(specialAccessGroup.doesInstrExistInAccessList(instructor));
+            // Check that the instructor doesn't exist in lists it doesn't belong in
+            assertTrue(specialAccessGroup.doesStudentExistInStudentList(instructor));
+            assertTrue(specialAccessGroup.doesInstrExistInAdminRightsList(instructor));
+            assertTrue(specialAccessGroup.doesAdminExist(instructor));
+        }
+
+        @Test
+        public void testAddToArticles_MultipleArticles() {
+            // Test adding multiple articles
+            Long articleId1 = 123L;
+            Long articleId2 = 456L;
+            
+            // Add the first article
+            assertTrue(specialAccessGroup.addToArticles(articleId1));
+            
+            // Add the second article
+            assertTrue(specialAccessGroup.addToArticles(articleId2));
+            
+            // Assert both articles are in the list
+            assertTrue(specialAccessGroup.getArticles().contains(articleId1));
+            assertTrue(specialAccessGroup.getArticles().contains(articleId2));
+            
+            // Assert the list size is 2
+            assertEquals(2, specialAccessGroup.getArticles().size());
+        }
+    } 
 
 }

@@ -31,6 +31,7 @@ public class TestCaseFile {
         dbHelper = null;  // Clean up after each test
     }
 
+    // Tests coneting ot database
     @Test
     public void testConnectToDatabase() {
         try {
@@ -41,6 +42,7 @@ public class TestCaseFile {
         }
     }
 
+    // Tests checking if the database is empty
     @Test
     public void testDatabaseEmpty() {
         try {
@@ -51,6 +53,7 @@ public class TestCaseFile {
         }
     }
 
+    // tests the ability to save and load users
     @Test
     public void testSaveAndLoadUsers() {
         try {
@@ -71,6 +74,7 @@ public class TestCaseFile {
         }
     }
 
+    // Tests the method that registers the first user
     @Test
     public void testInitialRegister() {
         try {
@@ -86,6 +90,7 @@ public class TestCaseFile {
         }
     }
 
+    // tests serializing roles
     @Test
     void testSerializeRoles() {
         Set<Role> roles = Set.of(Role.ADMIN, Role.USER);
@@ -93,6 +98,7 @@ public class TestCaseFile {
         assertEquals("ADMIN,USER", serialized);
     }
 
+    // tests deserializing roles
     @Test
     void testDeserializeRoles() {
         String rolesString = "ADMIN,USER";
@@ -100,7 +106,8 @@ public class TestCaseFile {
         assertTrue(roles.contains(Role.ADMIN));
         assertTrue(roles.contains(Role.USER));
     }
-    
+
+    // tests creating articles
     @Test
     void testCreateArticle() throws SQLException {
         char[] level = "beginner".toCharArray();
@@ -115,19 +122,22 @@ public class TestCaseFile {
         databaseHelper.createArticle(level, group, title, authors, articleAbstract, keywords, body, references);
         assertTrue(articleExists("Intro to Java"));
     }
-    
+
+    // tests listing articles
     @Test
     void testListArticles() throws SQLException {
         String articlesList = databaseHelper.listArticles();
         assertTrue(articlesList.contains("Intro to Java by Jeremy Jeremy"));
     }
-    
+
+    // tests listing articles by group
     @Test
     void testListArticlesByGroup() throws SQLException {
         String articlesList = databaseHelper.listArticlesByGroup("java");
         assertTrue(articlesList.contains("Intro to Java by Jeremy Jeremy"));
     }
-    
+
+    // tests updating articles
     @Test
     void testUpdateArticle() throws SQLException {
         long id = 1L; // Assumes test article with ID 1 exists
@@ -143,24 +153,22 @@ public class TestCaseFile {
         databaseHelper.updateArticle(id, level, group, title, authors, articleAbstract, keywords, body, references);
         assertTrue(databaseHelper.articleExistsByUniqueId(id));
     }
-    
+
+    // tests deleting articles
     @Test
     void testDeleteArticle() throws SQLException {
         int articleId = 1; // ID of an article to delete
         databaseHelper.deleteArticle(articleId);
         assertFalse(databaseHelper.articleExistsByUniqueId(articleId));
     }
-    
+
+    // tests backing articles up
     @Test
     void testBackupArticles() throws SQLException, IOException {
         String filename = "backup_test.txt";
         databaseHelper.backupArticles(filename);
 
         String file = new String(filename);
-        //assertTrue(file.exists());
-
-        // Clean up
-        //file.delete();
     }
     
     // JUnit Test to validate addToArticles() method

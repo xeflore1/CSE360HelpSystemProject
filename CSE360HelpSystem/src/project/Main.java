@@ -4,6 +4,8 @@ import javafx.application.Application;
 
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
@@ -34,8 +36,8 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-import static org.junit.jupiter.api.Assertions.*;
-import org.junit.jupiter.api.Test;
+//import static org.junit.jupiter.api.Assertions.*;
+//import org.junit.jupiter.api.Test;
 
 /*******
  * <p> Main class </p>
@@ -79,31 +81,37 @@ public class Main extends Application {
      * @param theStage    The pop up stage that handles all of the user interaction
      */
     @Override
-    public void start(Stage theStage) throws Exception { // Method for the first user account created (admin)
+    public void start(Stage theStage) throws Exception { 
         theStage.setTitle("ASU Help System");
+
+        // Load the ASU logo
+        Image asuLogo = new Image("file:images/ASU-logo.png"); // Path to your logo file
+        ImageView logoView = new ImageView(asuLogo);
+        logoView.setPreserveRatio(true); // Maintain aspect ratio
+        logoView.setFitWidth(75); // Adjust the width to fit nicely at the top
 
         // Initialize the database helper
         System.out.println("before init database");
 
         databaseHelper = new DatabaseHelper();
         System.out.println("after init database");
-        
+
         try {
-        	// connect to database
-        	databaseHelper.connectToDatabase();  // Connect to the database
-            System.out.println("aftetr connect");
+            // connect to database
+            databaseHelper.connectToDatabase(); // Connect to the database
+            System.out.println("after connect");
 
             // Load users from the database into the userList
             userList = databaseHelper.loadUsersFromDatabase();
             for (User u : userList) {
-            	System.out.println("username: " + u.getUsername());
+                System.out.println("username: " + u.getUsername());
             }
             specialAccessGroupsList = databaseHelper.loadSpecialAccessGroups();
             for (SpecialAccessGroup s : specialAccessGroupsList) {
-            	System.out.println("name: " + s.getGroupName());
+                System.out.println("name: " + s.getGroupName());
             }
             for (SpecialAccessGroup s : specialAccessGroupsList) {
-            	System.out.println("article: " + s.getArticles());
+                System.out.println("article: " + s.getArticles());
             }
         } catch (Exception e) {
             outputArea.appendText("Error loading users from the database: " + e.getMessage() + "\n");
@@ -111,116 +119,123 @@ public class Main extends Application {
 
         // Check if userList is empty
         if (userList.isEmpty()) {
-	        Pane firstLogin = new Pane();
-	        VBox formContainer = new VBox(5); // Main container for all components
-	        formContainer.setAlignment(Pos.CENTER);
-	        formContainer.setPadding(new Insets(10, 10, 20, 10)); // Add bottom padding for buffer
-	        
-	        Text welcomeText = new Text("Welcome to the ASU Help System");
-	        Button createUserButton = new Button("Create Admin");
-	        formContainer.getChildren().addAll(welcomeText, createUserButton, outputArea);
-	
-	        outputArea.setPrefHeight(200);
-	        outputArea.setEditable(false);
-	        Scene mainScene = new Scene(formContainer, 500, 800);
-	        theStage.setScene(mainScene);
-	
-	        // Create user fields and labels
-	        Label usernameLabel = new Label("Enter Username:");
-	        TextField usernameInput = new TextField();
-	        Label passwordLabel = new Label("Enter Password:");
-	        PasswordField passwordInput = new PasswordField();
-	        Label confirmPasswordLabel = new Label("Confirm Password:");
-	        PasswordField confirmPasswordInput = new PasswordField();
-	        // Button creation
-	        Button submitButton = new Button("Submit");
-	        Button cancelButton = new Button("Cancel");
-	
-	        // Add all components to form container (initially hidden)
-	        formContainer.getChildren().addAll(
-	            usernameLabel, usernameInput, 
-	            passwordLabel, passwordInput, 
-	            confirmPasswordLabel, confirmPasswordInput,
-	            submitButton, cancelButton
-	        );
-	        
-	        // components are initially not visible
-	        usernameLabel.setVisible(false);
-	        usernameInput.setVisible(false);
-	        passwordLabel.setVisible(false);
-	        passwordInput.setVisible(false);
-	        confirmPasswordLabel.setVisible(false);
-	        confirmPasswordInput.setVisible(false);
-	        submitButton.setVisible(false);
-	        cancelButton.setVisible(false);
-	
-	        // Event handler to show admin creation form
-	        createUserButton.setOnAction(event -> {
-	            outputArea.appendText("You are the first user and will be made an Admin.\n");
-	            usernameLabel.setVisible(true);
-	            usernameInput.setVisible(true);
-	            passwordLabel.setVisible(true);
-	            passwordInput.setVisible(true);
-	            confirmPasswordLabel.setVisible(true);
-	            confirmPasswordInput.setVisible(true);
-	            submitButton.setVisible(true);
-	            cancelButton.setVisible(true);
-	            createUserButton.setDisable(true);
-	        });
-	
-	        // Submit button handler for admin creation
-	        submitButton.setOnAction(event -> {
-	            String username = usernameInput.getText();
-	            char[] password = passwordInput.getText().toCharArray();
-	            char[] confirmPassword = confirmPasswordInput.getText().toCharArray();
-	            // create admin
-	            if (Arrays.equals(password, confirmPassword)) {
-	                if (adminUser == null) {
-	                    adminUser = new Admin(username, password);
-	                    adminUser.addRole(Role.ADMIN);
-	                    userList.add(adminUser);
-	                    currentUser = adminUser;
-	                    outputArea.appendText("Admin account created.\n");
-	                } else {
-	                    User newUser = new User(username, password);
-	                    newUser.addRole(Role.STUDENT);  // Default role for regular users
-	                    userList.add(newUser);
-	                    currentUser = newUser;
-	                    outputArea.appendText("User account created.\n");
-	                }
-	
-	                usernameLabel.setVisible(false);
-	                usernameInput.setVisible(false);
-	                passwordLabel.setVisible(false);
-	                passwordInput.setVisible(false);
-	                confirmPasswordLabel.setVisible(false);
-	                confirmPasswordInput.setVisible(false);
-	                submitButton.setVisible(false);
-	                cancelButton.setVisible(false);
-	
-	                collectUserInfo();  // Collect additional user information
-	            } else {
-	                outputArea.appendText("Passwords do not match. Please try again.\n");
-	            }
-	        });
-	
-	        cancelButton.setOnAction(event -> {
-	            usernameInput.clear();
-	            passwordInput.clear();
-	            confirmPasswordInput.clear();
-	            createUserButton.setDisable(false);
-	        });
-	
-	        theStage.show();
-        }
-        else {
-        	// Set up the main container for existing users
+            Pane firstLogin = new Pane();
+            VBox formContainer = new VBox(10); // Main container for all components
+            formContainer.setAlignment(Pos.CENTER);
+            formContainer.setPadding(new Insets(10, 10, 20, 10)); // Add padding
+
+            // Add the logo to the top of the form
+            formContainer.getChildren().add(logoView);
+
+            Text welcomeText = new Text("Welcome to the ASU Help System");
+            welcomeText.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+
+            Button createUserButton = new Button("Create Admin");
+            formContainer.getChildren().addAll(welcomeText, createUserButton, outputArea);
+
+            outputArea.setPrefHeight(200);
+            outputArea.setEditable(false);
+            Scene mainScene = new Scene(formContainer, 500, 800);
+            theStage.setScene(mainScene);
+
+            // Create user fields and labels
+            Label usernameLabel = new Label("Enter Username:");
+            TextField usernameInput = new TextField();
+            Label passwordLabel = new Label("Enter Password:");
+            PasswordField passwordInput = new PasswordField();
+            Label confirmPasswordLabel = new Label("Confirm Password:");
+            PasswordField confirmPasswordInput = new PasswordField();
+
+            // Button creation
+            Button submitButton = new Button("Submit");
+            Button cancelButton = new Button("Cancel");
+
+            // Add all components to form container (initially hidden)
+            formContainer.getChildren().addAll(
+                usernameLabel, usernameInput,
+                passwordLabel, passwordInput,
+                confirmPasswordLabel, confirmPasswordInput,
+                submitButton, cancelButton
+            );
+
+            // Set initial visibility to false
+            usernameLabel.setVisible(false);
+            usernameInput.setVisible(false);
+            passwordLabel.setVisible(false);
+            passwordInput.setVisible(false);
+            confirmPasswordLabel.setVisible(false);
+            confirmPasswordInput.setVisible(false);
+            submitButton.setVisible(false);
+            cancelButton.setVisible(false);
+
+            // Event handler to show admin creation form
+            createUserButton.setOnAction(event -> {
+                outputArea.appendText("You are the first user and will be made an Admin.\n");
+                usernameLabel.setVisible(true);
+                usernameInput.setVisible(true);
+                passwordLabel.setVisible(true);
+                passwordInput.setVisible(true);
+                confirmPasswordLabel.setVisible(true);
+                confirmPasswordInput.setVisible(true);
+                submitButton.setVisible(true);
+                cancelButton.setVisible(true);
+                createUserButton.setDisable(true);
+            });
+
+            // Submit button handler for admin creation
+            submitButton.setOnAction(event -> {
+                String username = usernameInput.getText();
+                char[] password = passwordInput.getText().toCharArray();
+                char[] confirmPassword = confirmPasswordInput.getText().toCharArray();
+                // Create admin
+                if (Arrays.equals(password, confirmPassword)) {
+                    if (adminUser == null) {
+                        adminUser = new Admin(username, password);
+                        adminUser.addRole(Role.ADMIN);
+                        userList.add(adminUser);
+                        currentUser = adminUser;
+                        outputArea.appendText("Admin account created.\n");
+                    } else {
+                        User newUser = new User(username, password);
+                        newUser.addRole(Role.STUDENT); // Default role for regular users
+                        userList.add(newUser);
+                        currentUser = newUser;
+                        outputArea.appendText("User account created.\n");
+                    }
+
+                    usernameLabel.setVisible(false);
+                    usernameInput.setVisible(false);
+                    passwordLabel.setVisible(false);
+                    passwordInput.setVisible(false);
+                    confirmPasswordLabel.setVisible(false);
+                    confirmPasswordInput.setVisible(false);
+                    submitButton.setVisible(false);
+                    cancelButton.setVisible(false);
+
+                    collectUserInfo(); // Collect additional user information
+                } else {
+                    outputArea.appendText("Passwords do not match. Please try again.\n");
+                }
+            });
+
+            cancelButton.setOnAction(event -> {
+                usernameInput.clear();
+                passwordInput.clear();
+                confirmPasswordInput.clear();
+                createUserButton.setDisable(false);
+            });
+
+            theStage.show();
+        } else {
+            // Set up the main container for existing users
             Pane existingUserPane = new Pane();
-            VBox existingUserContainer = new VBox(5); // Main container for all components
+            VBox existingUserContainer = new VBox(10); // Main container for all components
             existingUserContainer.setAlignment(Pos.CENTER);
-            existingUserContainer.setPadding(new Insets(10, 10, 20, 10)); // Add bottom padding for buffer
-            
-            // Welcome text
+            existingUserContainer.setPadding(new Insets(10, 10, 20, 10)); // Add padding
+
+            // Add the logo to the top of the existing user pane
+            existingUserContainer.getChildren().add(logoView);
+
             Text existingUserText = new Text("Welcome back to the ASU Help System");
             existingUserContainer.getChildren().add(existingUserText);
 
@@ -228,15 +243,16 @@ public class Main extends Application {
             outputArea.setPrefHeight(200);
             outputArea.setEditable(false);
             existingUserContainer.getChildren().add(outputArea);
+            
+            existingUserContainer.setStyle("-fx-background-color: linear-gradient(to bottom, #FFC627, #8C1D40);");
 
             // Set the scene
             Scene existingUserScene = new Scene(existingUserContainer, 500, 800);
             theStage.setScene(existingUserScene);
-          
+
             showSignInOrCreateAccount();
 
             theStage.show();
-        	
         }
     }
     

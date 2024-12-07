@@ -836,7 +836,6 @@ class DatabaseHelper {
      * @param groupId 			string of groupId
      * @return articleList 		string of article list
      */
-    // FIXME: ENWNEWNENWENWNEWNENWENWENWENWNENWENWENWNE
 
     public String listArticlesByGroup(String groupId) throws SQLException {
     	
@@ -887,7 +886,6 @@ class DatabaseHelper {
      * @param levelId 			string of levelId
      * @return articleList 		string of article list
      */
-    // FIXME: ENWNEWNENWENWNEWNENWENWENWENWNENWENWENWNE
 
     public String listArticlesByLevel(String level) throws SQLException {
        
@@ -936,7 +934,6 @@ class DatabaseHelper {
      * @param id 			long of id
      * @return articleList 		string of article list
      */
-    // FIXME: ENWNEWNENWENWNEWNENWENWENWENWNENWENWENWNE
 
     public String listArticlesByUniqueLongId(long id) throws SQLException {
         
@@ -985,7 +982,6 @@ class DatabaseHelper {
      * @param group 			String of group
      * @return articleList 		string of article list
      */
-    // FIXME: ENWNEWNENWENWNEWNENWENWENWENWNENWENWENWNE
 
     public String listArticlesByLevelAndGroup(String level, String group) throws SQLException {
         // If "all" or nothing was entered for level or group, adjust the query accordingly
@@ -1386,7 +1382,6 @@ class DatabaseHelper {
      * 
      * @param seqNum 		 sequence number of article
      */
-    // FIXME: ENWNEWNENWENWNEWNENWENWENWENWNENWENWENWNE
 
     public String getFormattedArticleWithSeq(int seqNum) throws SQLException {
         StringBuilder formattedArticle = new StringBuilder();

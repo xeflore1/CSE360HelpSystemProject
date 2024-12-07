@@ -58,8 +58,9 @@ public class SpecialAccessGroup {
         return articles;
     }
 
-    
-    // given a unique long id, check if aricles exists in the list
+    /*******
+    * This method is used to check if aricles exists in the list given a unique long id
+    */
     public boolean doesArticleExist(Long uniqueId) {
     	for (Long currId : articles) {
     		// article exists
@@ -69,7 +70,10 @@ public class SpecialAccessGroup {
     	}
     	return false;
     }
-    // given an articles unique long id, add it to the groups article list
+
+    /*******
+    * This method is used to add an article to the groups article list given a unique long id
+    */
     public boolean addToArticles(Long uniqueId) {
     	if (doesArticleExist(uniqueId)) {
     		return false; // return false if article wasn't added
@@ -80,7 +84,9 @@ public class SpecialAccessGroup {
     	}
     }
     
-    // given a unique long id, remove an article from article list
+    /*******
+    * This method is used to remove an article from the groups article list given a unique long id
+    */
     public boolean removeFromArticles(Long uniqueId) {
     	if (doesArticleExist(uniqueId)) {
     		articles.remove(uniqueId);
@@ -92,11 +98,12 @@ public class SpecialAccessGroup {
     }
     
     // ADMIN METHODS
+    // setters and getters
     public List<User> getAdmins() {
         return admins;
     }
     
-    // checks if user exist in admin list
+    
     public boolean doesAdminExist(User user) {
     	for (User currUser : admins) {
     		// article exists

@@ -106,14 +106,14 @@ public class generalArticleGroup {
     }
     
     /*******
-    * This method is used to check if the instructor exits
+    * This method is used to check if the instructor exists
     * @param user             user
     * @return bool            true or false
     */
     public boolean doesInstrExist(User user) {
     	for (User currUser : instructors) {
     		// article exists
-    		if (currUser.equals(user)) { // FIXME: MAY OR MAY NOT CHECK PROPERLY
+    		if (currUser.equals(user)) {
     			return true;
     		}
     	}
@@ -143,7 +143,7 @@ public class generalArticleGroup {
     }
     
     /*******
-    * This method is used to check if the instructor exists
+    * This method is used to check if the student exists in student list
     * @param user             user
     * @return bool            true or false
     */

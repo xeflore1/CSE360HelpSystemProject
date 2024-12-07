@@ -1674,7 +1674,6 @@ public class Main extends Application {
      * This is the method used to list articles by group.
      * Exception handling takes care of any database errors
      */
-    // FIXME: ENWNEWNENWENWNEWNENWENWENWENWNENWENWENWNE
 
     private void listByGroup() throws Exception {
             
@@ -1795,7 +1794,6 @@ public class Main extends Application {
      * This is the method used to list articles by level.
      * Exception handling takes care of any database errors
      */
-    // FIXME: ENWNEWNENWENWNEWNENWENWENWENWNENWENWENWNE
 
     private void listByLevel() throws Exception {
         
@@ -3391,13 +3389,16 @@ public class Main extends Application {
     	outputArea.appendText("Delete a special access article group\n");
     	clearPreviousOptionBox();
     	optionBox.getChildren().clear();
-    	
+
+	// label for deleting
     	Label deleteLabel = new Label("Enter name of special access article group to delete");
     	TextField groupNameField = new TextField();
-    	
+
+	// buttons for delete and back
     	Button delete = new Button("Delete");
     	Button back = new Button("Back");
-    	
+
+	// action button for delete
     	delete.setOnAction(e -> {
     		String groupName = groupNameField.getText();
     		SpecialAccessGroup group = null;
@@ -3415,7 +3416,8 @@ public class Main extends Application {
     					+ " does not exist\n");
     		}
     	});
-    	
+
+	// action button for back
     	back.setOnAction(e -> {
     		try {
                 specialAccessGroupOptions();
@@ -3433,7 +3435,10 @@ public class Main extends Application {
     	optionBox.setAlignment(Pos.CENTER);
         ((VBox) outputArea.getParent()).getChildren().add(optionBox);
     }
-    
+
+    /*********
+     * This is the method used to back up a special access article group
+     */
     private void backupSpecialAccessArticleGroup() {
     	outputArea.appendText("Backup articles\n");
         
@@ -3491,7 +3496,8 @@ public class Main extends Application {
             	}
         	}
         });
-        
+
+	// back action button
         backButton.setOnAction(event -> {
         	((VBox) outputArea.getParent()).getChildren().remove(backupBox);
             try {
@@ -3504,8 +3510,9 @@ public class Main extends Application {
         });
     }
     
-    
-    // method for general article group options
+    /*********
+     * This is the method used to show the general article group options
+     */
     private void generalArticleGroupOptions() {
     	outputArea.appendText("Select an option\n");
         
@@ -3555,7 +3562,8 @@ public class Main extends Application {
         	//((VBox) outputArea.getParent()).getChildren().remove(deleteBox);
             showUserOptions(currRole);  // Show options again when going back
         });
-        
+
+	// only for instructor or only for admin
         if (currRole == Role.INSTRUCTOR) {
 	        optionBox.getChildren().addAll(
 	            new Label("Select an option:"),
@@ -3580,7 +3588,10 @@ public class Main extends Application {
         optionBox.setAlignment(Pos.CENTER);
         ((VBox) outputArea.getParent()).getChildren().add(optionBox);
     }
-    
+
+    /*********
+     * This is the method used to create the general article group
+     */
     private void createGeneralArticleGroup() {
     	outputArea.appendText("Enter name for new General article group\n");
     	
@@ -3624,7 +3635,9 @@ public class Main extends Application {
         ((VBox) outputArea.getParent()).getChildren().add(optionBox);
     }
 
-    // method to view general article groups
+     /*********
+     * This is the method used to view the general article group
+     */
     private void viewGeneralArticleGroup() {
     	outputArea.appendText("Enter name of general article group to view\n");
     	
@@ -3669,7 +3682,9 @@ public class Main extends Application {
         ((VBox) outputArea.getParent()).getChildren().add(optionBox);
     }
     
-    // method to edit general article groups
+     /*********
+     * This is the method used to edit the general article group
+     */
     private void editGeneralArticleGroup() {
     	outputArea.appendText("Enter name of general article group to edit\n");
     	
@@ -3716,7 +3731,9 @@ public class Main extends Application {
         ((VBox) outputArea.getParent()).getChildren().add(optionBox);
     }
     
-    // method to add to a general article
+     /*********
+     * This is the method used to add to the general article group
+     */
     private void addToGeneralArticle(String group) {
     	outputArea.appendText("Enter sequence number of article to add\n");
     	
@@ -3760,7 +3777,9 @@ public class Main extends Application {
         ((VBox) outputArea.getParent()).getChildren().add(optionBox);
     }
     
-    // method to delete from a general article
+     /*********
+     * This is the method used to remove from the general article group
+     */
     private void removeFromGeneralArticle(String group) {
     	outputArea.appendText("Enter sequence number of article to delete\n");
     	
@@ -3804,7 +3823,9 @@ public class Main extends Application {
         ((VBox) outputArea.getParent()).getChildren().add(optionBox);
     }
     
-    // method to delete general article group
+    /*********
+     * This is the method used to delete the general article group
+     */
     private void deleteGeneralArticleGroup() {
     	outputArea.appendText("Delete general article group\n");
     	

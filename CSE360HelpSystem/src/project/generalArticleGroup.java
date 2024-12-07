@@ -54,6 +54,7 @@ public class generalArticleGroup {
     
     /*******
     * This method is used to add to amins.
+    * @param user             user
     */
     public void addToAdmins(User user) {
     	admins.add(user);
@@ -61,6 +62,7 @@ public class generalArticleGroup {
 
     /*******
     * This method is used to remove from admins
+    * @param user             user
     */
     public void removeFromAdmins(User user) {
     	admins.remove(user);
@@ -89,6 +91,7 @@ public class generalArticleGroup {
     
     /*******
     * This method is used to add to instructors.
+    * @param user             user
     */
     public void addToInstuctors(User user) {
     	instructors.add(user);
@@ -96,6 +99,7 @@ public class generalArticleGroup {
 
     /*******
     * This method is used to remove from instructors
+    * @param user             user
     */
     public void removeFromInstructors(User user) {
     	instructors.remove(user);
@@ -124,6 +128,7 @@ public class generalArticleGroup {
     
     /*******
     * This method is used to add to students.
+    * @param user             user
     */
     public void addToStudentList(User user) {
     	students.add(user);
@@ -131,6 +136,7 @@ public class generalArticleGroup {
 
     /*******
     * This method is used to remove from students.
+    * @param user             user
     */
     public void removeFromStudentList(User user) {
     	students.remove(user);

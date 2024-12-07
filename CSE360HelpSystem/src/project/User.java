@@ -98,17 +98,23 @@ public class User {
         }
     }
 
-    // Method to add a role
+    /*******
+    * This method is used to add a role to the roles.
+    */
     public void addRole(Role role) {
         roles.add(role);
     }
     
-    // Setter for roles
+    /*******
+    * This method is used to set the roles.
+    */
     public void setRoles(Set<Role> roles) {
         this.roles = roles;
     }
 
-    // Method to remove a role
+    /*******
+    * This method is used to remove a role from the roles.
+    */
     public void removeRole(Role role) {
         if (roles.contains(role)) {
             roles.remove(role);
@@ -117,17 +123,25 @@ public class User {
         }
     }
 
-    // Method to check if a user has a specific role
+    /*******
+    * This method is used to check if the roles has a role.
+    * @return bool 		true or false
+    */
     public boolean hasRole(Role role) {
         return roles.contains(role);
     }
 
-    // FIXME untested,  Check if user has multiple roles
+    /*******
+    * This method is used to check if roles is multiple.
+    * @return bool 		true or false
+    */
     public boolean hasMultipleRoles() {
         return roles.size() > 1;
     }
 
-    // Method to display user info
+    /*******
+    * This method is used to display user info.
+    */
     public void displayUserInfo() {
         System.out.println("Username: " + username);
         System.out.println("Name: " + firstName + " " + middleName + " " + lastName);
@@ -145,7 +159,9 @@ public class User {
         } */
     }
 
-    // Method to clear the password (for security)
+    /*******
+    * This method is used to clear the password for security.
+    */
     public void clearPassword() {
         for (int i = 0; i < password.length; i++) {
             password[i] = '\0';  // Overwrite password with null characters
@@ -245,14 +261,21 @@ public class User {
         return roles;
     }
 
-    // returns the special access group a user belongs to
+    /*******
+    * This method returns the special access group a user belongs to.
+    * @param specialList 		list of special access groups
+    * @param currentUser		the user
+    * @return group			string of the group
+    */
     public String getSpecialAccessGroups(List<SpecialAccessGroup> specialList, User currentUser) {
+	// if the special list is empty
         if (specialList.isEmpty()) {
             return "No special access groups assigned.";
         }
         
         StringBuilder result = new StringBuilder("Special Access Groups:\n");
         for (SpecialAccessGroup i : specialList) {
+		// this if statement is used to check if user exists within our lists
         	if (i.doesAdminExist(currentUser) || i.doesInstrExistInAccessList(currentUser) || 
         			i.doesInstrExistInAdminRightsList(currentUser) || i.doesStudentExistInStudentList(currentUser)) {
         		result.append("[" + i.getGroupName() + "]\n");
@@ -262,7 +285,11 @@ public class User {
         return result.toString();
     }
 
-	// Remove user's access to a specific article in a special access group
+	/*******
+        * This method removes user's access to a specific article in a special access group
+        * @param group			string of group
+        * @return bool			true or false
+        */
 	public boolean removeSpecialAccessGroup(String group) {
 	    // Check if the group exists and then remove it
 	    if (specialAccessGroups.containsKey(group)) {
@@ -272,15 +299,22 @@ public class User {
 	    return false;  // Indicate that the group was not found
 	}
 
+	/*******
+        * This method adds a special access group
+        * @param group			string of group
+        */
 	public void addSpecialAccessGroup(String group) {
 	    specialAccessGroups.computeIfAbsent(group, k -> new HashSet<>());
 	}
 	
-	// List all special access groups and their associated articles
+    /*******
+    * This method will list and print the special access groups.
+    */
     public void listSpecialAccessGroups() {
         if (specialAccessGroups == null) {
             System.out.println("specialAccessGroups is null");
         } else {
+	    // this for each will print out each separate group
             specialAccessGroups.forEach((group, articles) -> {
                 System.out.println("Group: " + group);
                 articles.forEach(article -> System.out.println(" - Article ID: " + article));

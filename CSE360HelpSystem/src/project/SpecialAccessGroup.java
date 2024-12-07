@@ -2,7 +2,19 @@ package project;
 
 import java.util.ArrayList;
 import java.util.List;
-// FIXME TEST IF FUNCITONS WORK
+
+/*******
+ * <p> SpeciallArticleGroup class </p>
+ * 
+ * <p> Description: This class represents groups of articles within the system. </p>
+ * <p> It stores information about group names and user roles within each group </p>
+ * <p> Provides methods to manage users in each role category </p>
+ * 
+ * <p> Collaborators: User, Admin. </p>
+ * 
+ * @author Hassan Khan, Colby Taylor, Xavier Flores, Shashwat Balaji, Avinash Poguluri, Abil Damirbek uulu
+ */
+
 public class SpecialAccessGroup {
     private String groupName;
     private List<Long> articles; // Articles with encrypted bodies, long represents the unique id of an article

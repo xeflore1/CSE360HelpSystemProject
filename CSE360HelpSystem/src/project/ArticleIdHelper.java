@@ -27,6 +27,7 @@ public class ArticleIdHelper {
      	* @param keywords			words used to process searches
      	* @param body				body of help article
      	* @param references		reference links or similar materials
+        * @return articleId		long of id
      	*/
 	public static long generateArticleId(char[] level, char[] groupId, char[] title, char[] authors, char[] articleAbstract, char[] keywords, char[] body, char[] references) {
         try {
@@ -50,7 +51,8 @@ public class ArticleIdHelper {
      /*********
      * This is the method used to convert bytes to long
      * 
-     * @param bytes    		the first 8 bytes of the hash	
+     * @param bytes    		the first 8 bytes of the hash
+     * @return long		long 
      */
     private static long bytesToLong(byte[] bytes) {
         long result = 0;

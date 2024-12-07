@@ -17,6 +17,7 @@ import java.util.List;
 
 public class generalArticleGroup {
 
+    // declaring needed variables
     private static List<generalArticleGroup> allGroups = new ArrayList<>();
     private String groupName;
     private List<User> admins;      // list of Admins
@@ -32,6 +33,7 @@ public class generalArticleGroup {
         allGroups.add(this);
     }
 
+    
     public static List<generalArticleGroup> getAllGroups() {
         return allGroups;
     }

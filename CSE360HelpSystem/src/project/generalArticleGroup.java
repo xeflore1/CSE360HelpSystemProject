@@ -33,7 +33,7 @@ public class generalArticleGroup {
         allGroups.add(this);
     }
 
-    
+    // gettings and setters
     public static List<generalArticleGroup> getAllGroups() {
         return allGroups;
     }
@@ -52,17 +52,25 @@ public class generalArticleGroup {
         return admins;
     }
     
-    // add user to admin list
+    /*******
+    * This method is used to add to amins.
+    */
     public void addToAdmins(User user) {
     	admins.add(user);
     }
 
-    // remove user from admin list
+    /*******
+    * This method is used to remove from admins
+    */
     public void removeFromAdmins(User user) {
     	admins.remove(user);
     }
     
-    // checks if user exist in admin list
+    /*******
+    * This method is used to check if the admin exits
+    * @param user             user
+    * @return bool            true or false
+    */
     public boolean doesAdminExist(User user) {
     	for (User currUser : admins) {
     		// article exists
@@ -79,17 +87,25 @@ public class generalArticleGroup {
         return instructors;
     }
     
-    // add to instructor with access list
+    /*******
+    * This method is used to add to instructors.
+    */
     public void addToInstuctors(User user) {
     	instructors.add(user);
     }
 
-    // remove user from instr. with access list
+    /*******
+    * This method is used to remove from instructors
+    */
     public void removeFromInstructors(User user) {
     	instructors.remove(user);
     }
     
-    // checks if user exist in instr. with access list
+    /*******
+    * This method is used to check if the instructor exits
+    * @param user             user
+    * @return bool            true or false
+    */
     public boolean doesInstrExist(User user) {
     	for (User currUser : instructors) {
     		// article exists
@@ -101,25 +117,34 @@ public class generalArticleGroup {
     }
 
     // STUDENT LIST METHODS
+    // getters and setters
     public List<User> getStudents() {
         return students;
     }
     
-    // add to student list
+    /*******
+    * This method is used to add to students.
+    */
     public void addToStudentList(User user) {
     	students.add(user);
     }
 
-    // remove user from student list
+    /*******
+    * This method is used to remove from students.
+    */
     public void removeFromStudentList(User user) {
     	students.remove(user);
     }
     
-    // checks if user exist in student list
+    /*******
+    * This method is used to check if the instructor exits
+    * @param user             user
+    * @return bool            true or false
+    */
     public boolean doesStudentExistInStudentList(User user) {
     	for (User currUser : students) {
     		// article exists
-    		if (currUser.equals(user)) { // FIXME: MAY OR MAY NOT CHECK PROPERLY
+    		if (currUser.equals(user)) {
     			return true;
     		}
     	}

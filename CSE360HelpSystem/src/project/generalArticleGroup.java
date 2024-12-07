@@ -143,7 +143,7 @@ public class generalArticleGroup {
     }
     
     /*******
-    * This method is used to check if the instructor exits
+    * This method is used to check if the instructor exists
     * @param user             user
     * @return bool            true or false
     */

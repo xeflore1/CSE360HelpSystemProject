@@ -60,6 +60,8 @@ public class SpecialAccessGroup {
 
     /*******
     * This method is used to check if aricles exists in the list given a unique long id
+    * @param uniqueId             long of id
+    * @return bool                true or false
     */
     public boolean doesArticleExist(Long uniqueId) {
     	for (Long currId : articles) {
@@ -73,6 +75,8 @@ public class SpecialAccessGroup {
 
     /*******
     * This method is used to add an article to the groups article list given a unique long id
+    * @param uniqueId             long of id
+    * @return bool                true or false
     */
     public boolean addToArticles(Long uniqueId) {
     	if (doesArticleExist(uniqueId)) {
@@ -86,6 +90,8 @@ public class SpecialAccessGroup {
     
     /*******
     * This method is used to remove an article from the groups article list given a unique long id
+    * @param uniqueId             long of id
+    * @return bool                true or false
     */
     public boolean removeFromArticles(Long uniqueId) {
     	if (doesArticleExist(uniqueId)) {
@@ -103,7 +109,11 @@ public class SpecialAccessGroup {
         return admins;
     }
     
-    
+    /*******
+    * This method is used to check if admin/user exists.
+    * @param user                 user
+    * @return bool                true or false
+    */
     public boolean doesAdminExist(User user) {
     	for (User currUser : admins) {
     		// article exists
@@ -113,7 +123,11 @@ public class SpecialAccessGroup {
     	}
     	return false;
     }
-    // add user to admin list
+    
+    /*******
+    * This method is used to add to admins
+    * @param user             user
+    */
     public boolean addToAdmins(User user) {
     	if (doesAdminExist(user)) {
     		return false; // admin already exists
@@ -124,7 +138,10 @@ public class SpecialAccessGroup {
     	}
     }
 
-    // remove user from admin list
+    /*******
+    * This method is used to remove from admins
+    * @param user             user
+    */
     public boolean removeFromAdmins(User user) {
     	if (doesAdminExist(user)) {
     		admins.remove(user);
@@ -137,10 +154,16 @@ public class SpecialAccessGroup {
     
     // INSTRUCTOR WITH ACCESS METHODS
     // add user to instr. with access list
+    // getters and setters
     public List<User> getInstructorsWithAccess() {
         return instructorsWithAccess;
     }
-    // checks if user exist in instr. with access list
+    
+    /*******
+    * This method is used to check if the instructor exists in access list
+    * @param user             user
+    * @return bool            true or false
+    */
     public boolean doesInstrExistInAccessList(User user) {
     	for (User currUser : instructorsWithAccess) {
     		// article exists
@@ -150,7 +173,13 @@ public class SpecialAccessGroup {
     	}
     	return false;
     }
-    // add to instructor with access list
+
+    
+    /*******
+    * This method is used to add to instructors with access.
+    * @param user             user
+    * @return bool             true or false
+    */
     public boolean addToInstrWithAccess(User user) {
     	if (doesInstrExistInAccessList(user)) {
     		return false;
@@ -161,7 +190,11 @@ public class SpecialAccessGroup {
     	}
     }
 
-    // remove user from instr. with access list
+    /*******
+    * This method is used to remove from instructors with access.
+    * @param user             user
+    * @return bool             true or false
+    */
     public boolean removeFromInstrWithAccess(User user) {
     	if (doesInstrExistInAccessList(user)) {
     		instructorsWithAccess.remove(user);
@@ -173,10 +206,16 @@ public class SpecialAccessGroup {
     }
 
     // INSTRUCTOR WITH ADMIN RIGHTS METHODS
+    // getters and setters
     public List<User> getInstructorsWithAdminRights() {
         return instructorsWithAdminRights;
     }
-    // checks if user exist in instructor with admin rights list
+
+    /*******
+    * This method is used to check if user exists in instructor with admin rights list
+    * @param user             user
+    * @return bool             true or false
+    */
     public boolean doesInstrExistInAdminRightsList(User user) {
     	for (User currUser : instructorsWithAdminRights) {
     		// article exists
@@ -186,7 +225,12 @@ public class SpecialAccessGroup {
     	}
     	return false;
     }
-    // add to instructor with admin rights list
+
+    /*******
+    * This method is used to add to instructor with admin rights list
+    * @param user             user
+    * @return bool             true or false
+    */
     public boolean addToInstrWithAdminRights(User user) {
     	if (doesInstrExistInAdminRightsList(user)) {
     		return false;
@@ -197,7 +241,11 @@ public class SpecialAccessGroup {
     	}
     }
 
-    // remove user from instructor with admin rights list
+    /*******
+    * This method is used to remove to instructor with admin rights list
+    * @param user             user
+    * @return bool             true or false
+    */
     public boolean removeFromInstrWithAdminRights(User user) {
     	if (doesInstrExistInAdminRightsList(user)) {
     		instructorsWithAdminRights.remove(user);
@@ -209,10 +257,16 @@ public class SpecialAccessGroup {
     }
 
     // STUDENT LIST METHODS
+    // getters and setters
     public List<User> getStudentsWithAccess() {
         return studentsWithViewingRights;
     }
-    // checks if user exist in student list
+
+    /*******
+    * This method is used to check if user exists in student list
+    * @param user             user
+    * @return bool             true or false
+    */
     public boolean doesStudentExistInStudentList(User user) {
     	for (User currUser : studentsWithViewingRights) {
     		// article exists
@@ -222,7 +276,12 @@ public class SpecialAccessGroup {
     	}
     	return false;
     }
-    // add to student list
+
+    /*******
+    * This method is used to add to student list.
+    * @param user             user
+    * @return bool             true or false
+    */
     public boolean addToStudentList(User user) {
     	if (doesStudentExistInStudentList(user)) {
     		return false;
@@ -233,7 +292,11 @@ public class SpecialAccessGroup {
     	}
     }
 
-    // remove user from student list
+    /*******
+    * This method is used to remove from student list.
+    * @param user             user
+    * @return bool             true or false
+    */
     public boolean removeFromStudentList(User user) {
     	if (doesStudentExistInStudentList(user)) {
     		studentsWithViewingRights.remove(user);

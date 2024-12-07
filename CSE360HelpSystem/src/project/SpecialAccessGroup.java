@@ -4,11 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /*******
- * <p> SpeciallArticleGroup class </p>
+ * <p> SpecialAccessGroup class </p>
  * 
- * <p> Description: This class represents groups of articles within the system. </p>
- * <p> It stores information about group names and user roles within each group </p>
- * <p> Provides methods to manage users in each role category </p>
+ * <p> Description: This class represents groups with special access to encrypted articles. </p>
+ * <p> It manages group names, articles, and user roles. </p>
+ * <p> Provides methods to add, remove, and verify users or articles within the group. </p>
  * 
  * <p> Collaborators: User, Admin. </p>
  * 
@@ -43,6 +43,7 @@ public class SpecialAccessGroup {
     }
 
     // GROUP METHODS
+    // getters and setters
     public String getGroupName() {
         return groupName;
     }
@@ -52,9 +53,12 @@ public class SpecialAccessGroup {
     }
 
     // ARTICLE METHODS
+    // getters and setters
     public List<Long> getArticles() {
         return articles;
     }
+
+    
     // given a unique long id, check if aricles exists in the list
     public boolean doesArticleExist(Long uniqueId) {
     	for (Long currId : articles) {
